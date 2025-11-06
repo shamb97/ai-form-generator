@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Form Generator - Test Interface</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-blue-600 mb-2">
+                🤖 AI Form Generator
+            </h1>
+            <p class="text-gray-600">Describe your form in plain English, get a working form instantly</p>
+        </div>
+
+        <!-- Input Section -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-2xl font-semibold mb-4">Describe Your Form</h2>
+            
+            <textarea 
+                id="promptInput"
+                class="w-full h-32 p-4 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
+                placeholder="Example: Create a daily pain diary with pain severity (0-10 scale), location dropdown (head, chest, abdomen, back, limbs), and free text notes field"
+            ></textarea>
+            
+            <div class="mt-4 flex gap-3">
+                <button 
+                    id="generateBtn"
+                    onclick="generateForm()"
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition duration-200 flex items-center gap-2"
+                >
+                    <span>✨ Generate Form</span>
+                </button>
+                
+                <button 
+                    onclick="loadExample()"
+                    class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
+                >
+                    Load Example
+                </button>
+                
+                <button 
+                    onclick="clearAll()"
+                    class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
+                >
+                    Clear
+                </button>
+            </div>
+            
+            <!-- Loading State -->
+            <div id="loading" class="hidden mt-4">
+                <div class="flex items-center gap-3 text-blue-600">
+                    <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                    <span class="font-medium">Generating form with Claude AI...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="hidden">
+            <!-- Success Message -->
+            <div id="successMessage" class="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">✅</span>
+                    <div>
+                        <p class="font-bold text-green-800">Form Generated Successfully!</p>
+                        <p class="text-green-700 text-sm">Form ID: <span id="formIdDisplay" class="font-mono"></span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorMessage" class="hidden bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">❌</span>
+                    <div>
+                        <p class="font-bold text-red-800">Generation Failed</p>
+                        <p id="errorText" class="text-red-700 text-sm"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Two Column Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Left: JSON Schema -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4">📋 Generated Schema</h2>
+                    <pre id="schemaOutput" class="bg-gray-50 p-4 rounded border border-gray-300 overflow-x-auto text-xs font-mono max-h-96 overflow-y-auto"></pre>
+                    <button onclick="copySchema()" class="mt-3 bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded text-sm">
+                        📋 Copy JSON
+                    </button>
+                </div>
+
+                <!-- Right: Form Preview -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4">👀 Form Preview</h2>
+                    <div id="formPreview" class="space-y-4 max-h-96 overflow-y-auto"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:8000';
+
+        async function generateForm() {
+            const prompt = document.getElementById('promptInput').value.trim();
+            
+            if (prompt.length < 10) {
+                alert('Please describe your form in at least 10 characters!');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('generateBtn').disabled = true;
+            document.getElementById('resultsSection').classList.add('hidden');
+
+            try {
+                const response = await fetch(`${API_URL}/api/v1/forms/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt })
+                });
+
+                const data = await response.json();
+
+                // Hide loading
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('generateBtn').disabled = false;
+
+                // Only use form_schema field
+                if (data.success && data.form_schema) {
+                    showSuccess(data);
+                } else {
+                    showError(data.error || 'Unknown error occurred. No form_schema returned.');
+                    console.error('Full response:', data);
+                }
+
+            } catch (error) {
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('generateBtn').disabled = false;
+                showError(`Network error: ${error.message}. Make sure backend is running on port 8000!`);
+            }
+        }
+
+        function showSuccess(data) {
+            document.getElementById('resultsSection').classList.remove('hidden');
+            document.getElementById('successMessage').classList.remove('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
+            
+            document.getElementById('formIdDisplay').textContent = data.form_id;
+            document.getElementById('schemaOutput').textContent = JSON.stringify(data.form_schema, null, 2);
+            
+            renderFormPreview(data.form_schema);
+        }
+
+        function showError(errorMsg) {
+            document.getElementById('resultsSection').classList.remove('hidden');
+            document.getElementById('successMessage').classList.add('hidden');
+            document.getElementById('errorMessage').classList.remove('hidden');
+            document.getElementById('errorText').textContent = errorMsg;
+        }
+
+        function renderFormPreview(schema) {
+            const preview = document.getElementById('formPreview');
+            preview.innerHTML = '';
+
+            // Form title and description
+            const header = document.createElement('div');
+            header.className = 'mb-6 pb-4 border-b-2 border-gray-200';
+            header.innerHTML = `
+                <h3 class="text-2xl font-bold text-gray-800">${schema.title || 'Form'}</h3>
+                ${schema.description ? `<p class="text-gray-600 mt-2">${schema.description}</p>` : ''}
+            `;
+            preview.appendChild(header);
+
+            // Render fields
+            schema.fields.forEach(field => {
+                const fieldDiv = document.createElement('div');
+                fieldDiv.className = 'mb-4';
+
+                const label = document.createElement('label');
+                label.className = 'block text-sm font-medium text-gray-700 mb-2';
+                label.textContent = field.label;
+                if (field.required) {
+                    const required = document.createElement('span');
+                    required.className = 'text-red-500';
+                    required.textContent = ' *';
+                    label.appendChild(required);
+                }
+                fieldDiv.appendChild(label);
+
+                // Help text
+                if (field.help_text) {
+                    const help = document.createElement('p');
+                    help.className = 'text-xs text-gray-500 mb-2';
+                    help.textContent = field.help_text;
+                    fieldDiv.appendChild(help);
+                }
+
+                // Input based on type
+                let input;
+                switch (field.type) {
+                    case 'textarea':
+                        input = document.createElement('textarea');
+                        input.rows = 3;
+                        input.className = 'w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500';
+                        break;
+                    
+                    case 'dropdown':
+                        input = document.createElement('select');
+                        input.className = 'w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500';
+                        const defaultOption = document.createElement('option');
+                        defaultOption.value = '';
+                        defaultOption.textContent = '-- Select --';
+                        input.appendChild(defaultOption);
+                        (field.options || []).forEach(opt => {
+                            const option = document.createElement('option');
+                            option.value = opt;
+                            option.textContent = opt;
+                            input.appendChild(option);
+                        });
+                        break;
+                    
+                    case 'radio':
+                        const radioDiv = document.createElement('div');
+                        radioDiv.className = 'space-y-2';
+                        (field.options || []).forEach(opt => {
+                            const radioLabel = document.createElement('label');
+                            radioLabel.className = 'flex items-center gap-2 cursor-pointer';
+                            const radio = document.createElement('input');
+                            radio.type = 'radio';
+                            radio.name = field.field_id;
+                            radio.value = opt;
+                            radio.className = 'text-blue-600';
+                            radioLabel.appendChild(radio);
+                            radioLabel.appendChild(document.createTextNode(opt));
+                            radioDiv.appendChild(radioLabel);
+                        });
+                        fieldDiv.appendChild(radioDiv);
+                        preview.appendChild(fieldDiv);
+                        return;
+                    
+                    case 'checkbox':
+                        const checkDiv = document.createElement('div');
+                        checkDiv.className = 'space-y-2';
+                        (field.options || []).forEach(opt => {
+                            const checkLabel = document.createElement('label');
+                            checkLabel.className = 'flex items-center gap-2 cursor-pointer';
+                            const check = document.createElement('input');
+                            check.type = 'checkbox';
+                            check.value = opt;
+                            check.className = 'text-blue-600';
+                            checkLabel.appendChild(check);
+                            checkLabel.appendChild(document.createTextNode(opt));
+                            checkDiv.appendChild(checkLabel);
+                        });
+                        fieldDiv.appendChild(checkDiv);
+                        preview.appendChild(fieldDiv);
+                        return;
+                    
+                    case 'slider':
+                        const sliderDiv = document.createElement('div');
+                        const slider = document.createElement('input');
+                        slider.type = 'range';
+                        slider.min = field.validation?.min || 0;
+                        slider.max = field.validation?.max || 10;
+                        slider.className = 'w-full';
+                        const sliderValue = document.createElement('span');
+                        sliderValue.className = 'text-sm font-bold text-blue-600';
+                        sliderValue.textContent = slider.value;
+                        slider.oninput = () => sliderValue.textContent = slider.value;
+                        sliderDiv.appendChild(slider);
+                        sliderDiv.appendChild(document.createTextNode(' Value: '));
+                        sliderDiv.appendChild(sliderValue);
+                        fieldDiv.appendChild(sliderDiv);
+                        preview.appendChild(fieldDiv);
+                        return;
+                    
+                    case 'date':
+                        input = document.createElement('input');
+                        input.type = 'date';
+                        input.className = 'p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500';
+                        break;
+                    
+                    case 'time':
+                        input = document.createElement('input');
+                        input.type = 'time';
+                        input.className = 'p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500';
+                        break;
+                    
+                    default: // text, number
+                        input = document.createElement('input');
+                        input.type = field.type === 'number' ? 'number' : 'text';
+                        input.className = 'w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500';
+                        if (field.validation?.min !== undefined) input.min = field.validation.min;
+                        if (field.validation?.max !== undefined) input.max = field.validation.max;
+                }
+
+                fieldDiv.appendChild(input);
+                preview.appendChild(fieldDiv);
+            });
+        }
+
+        function loadExample() {
+            document.getElementById('promptInput').value = 
+                "Create a daily symptom diary for IBD patients with: pain severity (0-10 slider), stool frequency (number input), blood in stool (yes/no radio), symptom location (dropdown: abdomen, joints, eyes, skin), and additional notes (textarea)";
+        }
+
+        function clearAll() {
+            document.getElementById('promptInput').value = '';
+            document.getElementById('resultsSection').classList.add('hidden');
+        }
+
+        function copySchema() {
+            const schema = document.getElementById('schemaOutput').textContent;
+            navigator.clipboard.writeText(schema);
+            alert('Schema copied to clipboard!');
+        }
+
+        // Enter key to generate
+        document.getElementById('promptInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                generateForm();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+Title,Body,Labels,Milestone,Assignees
+text: Short text input,"text: Short text input
+
+Imported from implementation_roadmap.md.","roadmap,automation",Initialize Anthropic client,
+textarea: Long text input,"textarea: Long text input
+
+Imported from implementation_roadmap.md.","roadmap,automation",Initialize Anthropic client,
+number: Numeric input,"number: Numeric input
+
+Imported from implementation_roadmap.md.","roadmap,automation",Initialize Anthropic client,
+dropdown: Single selection from list,"dropdown: Single selection from list
+
+Imported from implementation_roadmap.md.","roadmap,automation",Initialize Anthropic client,
+radio: Single selection with visible options,"radio: Single selection with visible options
+
+Imported from implementation_roadmap.md.","roadmap,automation",Initialize Anthropic client,
+checkbox: Multiple selections,"checkbox: Multiple selections
+
+Imported from implementation_roadmap.md.","roadmap,automation",Initialize Anthropic client,
+slider: Numeric input with visual slider,"slider: Numeric input with visual slider
+
+Imported from implementation_roadmap.md.","roadmap,automation",Initialize Anthropic client,
+date: Date picker,"date: Date picker
+
+Imported from implementation_roadmap.md.","roadmap,automation",Initialize Anthropic client,
+time: Time picker,"time: Time picker
+
+Imported from implementation_roadmap.md.","roadmap,automation",Initialize Anthropic client,
+Working demo (end-to-end),"Working demo (end-to-end)
+
+Imported from implementation_roadmap.md.","roadmap,automation",Success Metrics for Nov 10 Meeting,
+3+ example forms generated successfully,"3+ example forms generated successfully
+
+Imported from implementation_roadmap.md.","roadmap,automation",Success Metrics for Nov 10 Meeting,
+LCM scheduling working,"LCM scheduling working
+
+Imported from implementation_roadmap.md.","roadmap,automation",Success Metrics for Nov 10 Meeting,
+Basic validation implemented,"Basic validation implemented
+
+Imported from implementation_roadmap.md.","roadmap,automation",Success Metrics for Nov 10 Meeting,
+"Clean, professional interface","Clean, professional interface
+
+Imported from implementation_roadmap.md.","roadmap,automation",Success Metrics for Nov 10 Meeting,
+Database storage,"Database storage
+
+Imported from implementation_roadmap.md.","roadmap,automation",Success Metrics for Nov 10 Meeting,
+Export functionality,"Export functionality
+
+Imported from implementation_roadmap.md.","roadmap,automation",Success Metrics for Nov 10 Meeting,
+Multiple LLM support (Claude + Ollama),"Multiple LLM support (Claude + Ollama)
+
+Imported from implementation_roadmap.md.","roadmap,automation",Success Metrics for Nov 10 Meeting,
+Automated tests,"Automated tests
+
+Imported from implementation_roadmap.md.","roadmap,automation",Success Metrics for Nov 10 Meeting,
+Use hardcoded example responses,"Use hardcoded example responses
+
+Imported from implementation_roadmap.md.","roadmap,automation",Emergency Fallback Plan,
+Focus on frontend demo,"Focus on frontend demo
+
+Imported from implementation_roadmap.md.","roadmap,automation",Emergency Fallback Plan,
+Show architecture diagram,"Show architecture diagram
+
+Imported from implementation_roadmap.md.","roadmap,automation",Emergency Fallback Plan,
+Cut database integration,"Cut database integration
+
+Imported from implementation_roadmap.md.","roadmap,automation",Emergency Fallback Plan,
+Cut advanced validation,"Cut advanced validation
+
+Imported from implementation_roadmap.md.","roadmap,automation",Emergency Fallback Plan,
+Focus on core: prompt → schema → schedule,"Focus on core: prompt → schema → schedule
+
+Imported from implementation_roadmap.md.","roadmap,automation",Emergency Fallback Plan,
+Have screenshot backup,"Have screenshot backup
+
+Imported from implementation_roadmap.md.","roadmap,automation",Emergency Fallback Plan,
+Have video recording ready,"Have video recording ready
+
+Imported from implementation_roadmap.md.","roadmap,automation",Emergency Fallback Plan,
+Explain what *should* happen,"Explain what *should* happen
+
+Imported from implementation_roadmap.md.","roadmap,automation",Emergency Fallback Plan,
