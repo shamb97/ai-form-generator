@@ -1,3 +1,35 @@
+"""
+AI-Powered Clinical Form Generator
+Backend API Server
+
+Includes:
+- Form generation from natural language (Day 1)
+- LCM scheduling algorithm (Day 2)
+- Phase tracking, events, navigation (Day 3)
+- Study configuration module (Day 3 extension)
+
+Configuration Module Features:
+- Control participant UI display options
+- Enable/disable study features
+- Presets: simple_survey, clinical_trial, minimal
+- Validation logic ensures configuration consistency
+- Frontend filtering based on config
+
+Next Steps (Day 4):
+- Database integration
+- Intra-form skip logic
+- Informed consent system
+"""
+
+from study_config import (
+    StudyConfiguration,
+    ParticipantUIConfig,
+    StudyFeatures,
+    validate_configuration
+)
+from typing import Optional
+
+
 # --- Load environment first ---
 import os, json, re
 from pathlib import Path
@@ -233,3 +265,189 @@ if __name__ == "__main__":
     import uvicorn
     print("🚀 Starting AI Form Generator API...")
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+    # === STUDY CONFIGURATION ENDPOINTS ===
+
+@app.post("/api/v1/studies/configure")
+def configure_study(
+    study_id: str,
+    study_name: str,
+    preset: Optional[str] = None,
+    custom_ui: Optional[dict] = None,
+    custom_features: Optional[dict] = None
+):
+    """
+    Create or update study configuration.
+    
+    Supports three modes:
+    1. Preset: preset="simple_survey" or "clinical_trial" or "minimal"
+    2. Custom: Provide custom_ui and/or custom_features dicts
+    3. Default: Uses simple_survey if nothing specified
+    
+    Examples:
+        # Using preset
+        POST {"study_id": "S001", "study_name": "My Survey", "preset": "simple_survey"}
+        
+        # Custom UI only
+        POST {
+            "study_id": "S001",
+            "study_name": "My Survey",
+            "custom_ui": {"show_progress_bar": true, "show_phase_name": false}
+        }
+        
+        # Full custom
+        POST {
+            "study_id": "S001",
+            "study_name": "My Survey",
+            "custom_ui": {...},
+            "custom_features": {...}
+        }
+    """
+    try:
+        # Create configuration based on input
+        if preset == "simple_survey":
+            config = StudyConfiguration.simple_survey(study_id, study_name)
+        elif preset == "clinical_trial":
+            config = StudyConfiguration.clinical_trial(study_id, study_name)
+        elif preset == "minimal":
+            config = StudyConfiguration.minimal(study_id, study_name)
+        elif custom_ui or custom_features:
+            # Build custom configuration
+            ui_config = ParticipantUIConfig(**custom_ui) if custom_ui else ParticipantUIConfig()
+            feature_config = StudyFeatures(**custom_features) if custom_features else StudyFeatures()
+            
+            config = StudyConfiguration(
+                study_id=study_id,
+                study_name=study_name,
+                participant_ui=ui_config,
+                features=feature_config
+            )
+        else:
+            # Default to simple survey
+            config = StudyConfiguration.simple_survey(study_id, study_name)
+        
+        # Validate configuration
+        is_valid, errors = validate_configuration(config)
+        if not is_valid:
+            return {
+                "success": False,
+                "errors": errors,
+                "message": "Configuration validation failed"
+            }
+        
+        # TODO: Save to database (Day 4)
+        # For now, just return success
+        
+        return {
+            "success": True,
+            "configuration": config.model_dump(),
+            "summary": config.summary(),
+            "message": f"Study '{study_name}' configured successfully"
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "Failed to create configuration"
+        }
+
+
+@app.get("/api/v1/studies/{study_id}/config")
+def get_study_config(study_id: str):
+    """
+    Get study configuration.
+    
+    Returns the full configuration for a study.
+    TODO: Load from database (Day 4)
+    """
+    # For now, return a demo config
+    config = StudyConfiguration.clinical_trial(study_id, "Demo Study")
+    
+    return {
+        "success": True,
+        "configuration": config.model_dump(),
+        "summary": config.summary()
+    }
+
+
+@app.post("/api/v1/studies/{study_id}/participant-view")
+def get_participant_view(study_id: str, context: dict):
+    """
+    Get participant view data based on study configuration.
+    
+    Takes full study context and returns only the fields
+    enabled in the study configuration.
+    
+    Example context:
+    {
+        "progress_bar": 50,
+        "completion_pct": 50,
+        "phase_name": "Intervention",
+        "next_form": "Daily Diary",
+        ...
+    }
+    
+    Returns filtered context based on config.
+    """
+    try:
+        # TODO: Load config from database (Day 4)
+        # For now, use clinical trial preset
+        config = StudyConfiguration.clinical_trial(study_id, "Demo Study")
+        
+        # Filter context based on configuration
+        view_data = config.get_participant_view_data(context)
+        
+        return {
+            "success": True,
+            "study_id": study_id,
+            "view_data": view_data,
+            "fields_shown": list(view_data.keys()),
+            "fields_hidden": list(set(context.keys()) - set(view_data.keys()))
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
+@app.get("/api/v1/studies/presets")
+def list_presets():
+    """
+    List available configuration presets.
+    
+    Returns details about each preset to help users choose.
+    """
+    return {
+        "presets": {
+            "simple_survey": {
+                "name": "Simple Survey",
+                "description": "Minimal UI for short surveys and questionnaires",
+                "best_for": "One-time surveys, feedback forms, quick assessments",
+                "ui_elements": ["Progress bar", "Next form", "Completion message"],
+                "features": ["Skip logic", "Validation", "Informed consent"]
+            },
+            "clinical_trial": {
+                "name": "Clinical Trial",
+                "description": "Full-featured UI for complex longitudinal studies",
+                "best_for": "Multi-phase trials, long-term studies, research protocols",
+                "ui_elements": [
+                    "Progress bar", "Completion %", "Phase name", 
+                    "Forms remaining", "Calendar view", "Missed forms"
+                ],
+                "features": [
+                    "Skip logic", "Validation", "Help text",
+                    "Informed consent", "Eligibility check", "Progress tracking"
+                ]
+            },
+            "minimal": {
+                "name": "Minimal",
+                "description": "Absolute minimum UI - just forms",
+                "best_for": "Very short assessments, single-question forms",
+                "ui_elements": ["Completion message only"],
+                "features": ["Validation", "Informed consent"]
+            }
+        }
+    }
