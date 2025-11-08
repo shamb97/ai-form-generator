@@ -261,11 +261,6 @@ async def generate_schedule(request: ScheduleRequest):
     
     return result
 
-if __name__ == "__main__":
-    import uvicorn
-    print("🚀 Starting AI Form Generator API...")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-
     # === STUDY CONFIGURATION ENDPOINTS ===
 
 @app.post("/api/v1/studies/configure")
@@ -451,3 +446,8 @@ def list_presets():
             }
         }
     }
+
+if __name__ == "__main__":
+    import uvicorn
+    print("🚀 Starting AI Form Generator API...")
+    uvicorn.run(app, host="0.0.0.0", port=8000)
