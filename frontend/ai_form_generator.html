@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Form Generator - Chat Interface</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* AI Chat Specific Styles */
+        .ai-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px 12px 0 0;
+            text-align: center;
+        }
+
+        .chat-header h1 {
+            margin: 0;
+            font-size: 2em;
+        }
+
+        .chat-header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+
+        .chat-body {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-top: none;
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            max-height: 500px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.ai {
+            justify-content: flex-start;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .message.user .message-content {
+            background: #667eea;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.ai .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-label {
+            font-size: 0.75em;
+            opacity: 0.7;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .chat-input-area {
+            padding: 20px 30px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .chat-suggestions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .suggestion-chip {
+            padding: 8px 16px;
+            background: #f0f0f0;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .suggestion-chip:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 1em;
+            transition: border-color 0.2s;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .send-button {
+            padding: 15px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .send-button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading-indicator {
+            display: none;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .loading-indicator.active {
+            display: block;
+        }
+
+        .loading-dots {
+            display: inline-block;
+        }
+
+        .loading-dots span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            margin: 0 3px;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        .form-preview {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+
+        .form-preview h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+
+        .form-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-button.primary {
+            background: #28a745;
+            color: white;
+        }
+
+        .action-button.primary:hover {
+            background: #218838;
+        }
+
+        .action-button.secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .action-button.secondary:hover {
+            background: #5a6268;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .agent-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #e3f2fd;
+            color: #1976d2;
+            border-radius: 12px;
+            font-size: 0.7em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="ai-container">
+        <a href="dashboard.html" class="back-link">← Back to Dashboard</a>
+        
+        <div class="chat-header">
+            <h1>🤖 AI Form Designer</h1>
+            <p>Chat with AI to design your clinical research forms</p>
+            <span class="agent-badge">POWERED BY CLAUDE</span>
+        </div>
+
+        <div class="chat-body">
+            <div class="chat-messages" id="chatMessages">
+                <!-- Welcome message -->
+                <div class="message ai">
+                    <div class="message-content">
+                        <div class="message-label">🤖 Form Designer Agent</div>
+                        <div>
+                            <p><strong>Hello! I'm your AI Form Designer.</strong></p>
+                            <p>I can help you create professional clinical research forms from natural language descriptions.</p>
+                            <p>Try something like:</p>
+                            <ul>
+                                <li>"Create a daily pain diary with intensity, location, and medication tracking"</li>
+                                <li>"Design a mood assessment with happiness, anxiety, and sleep quality"</li>
+                                <li>"Build a symptom checklist for fever, cough, and fatigue"</li>
+                            </ul>
+                            <p>What would you like to create today?</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="loading-indicator" id="loadingIndicator">
+                <div class="loading-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <p>AI is thinking...</p>
+            </div>
+
+            <div class="chat-input-area">
+                <div class="chat-suggestions" id="suggestions">
+                    <div class="suggestion-chip" data-text="Daily pain diary with 0-10 scale">Pain Diary</div>
+                    <div class="suggestion-chip" data-text="Weekly mood tracker with happiness and anxiety">Mood Tracker</div>
+                    <div class="suggestion-chip" data-text="Symptom checklist for adverse events">Symptom Checklist</div>
+                    <div class="suggestion-chip" data-text="Quality of life assessment">Quality of Life</div>
+                </div>
+
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        class="chat-input" 
+                        id="chatInput" 
+                        placeholder="Describe the form you want to create..."
+                        autocomplete="off"
+                    >
+                    <button class="send-button" id="sendButton">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="ai_form_generator.js"></script>
+</body>
+</html>

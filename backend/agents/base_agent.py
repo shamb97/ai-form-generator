@@ -1,0 +1,132 @@
+"""
+Base Agent Class
+================
+
+This is the BLUEPRINT for all our AI agents!
+
+Think of it like a SUPERHERO TEMPLATE - every agent gets these basic powers,
+then adds their own special abilities on top!
+"""
+
+import os
+from typing import Dict, List, Any, Optional
+from anthropic import Anthropic
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+class BaseAgent:
+    """
+    Base class for all AI agents in our system
+    
+    Every agent inherits from this class and gets:
+    - Connection to Claude API
+    - Basic conversation ability
+    - Memory of what's been discussed
+    - Error handling
+    """
+    
+    def __init__(self, name: str, role: str, system_prompt: str):
+        """
+        Initialize the agent
+        
+        Args:
+            name: The agent's name (like "Form Designer Agent")
+            role: What the agent does (like "Creates clinical forms from descriptions")
+            system_prompt: Instructions that tell the agent how to behave
+        """
+        self.name = name
+        self.role = role
+        self.system_prompt = system_prompt
+        
+        # Get API key from environment
+        self.api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not self.api_key:
+            raise ValueError(
+                "ANTHROPIC_API_KEY not found in environment! "
+                "Please set it with: export ANTHROPIC_API_KEY='your-key-here'"
+            )
+        
+        # Initialize Anthropic client
+        self.client = Anthropic(api_key=self.api_key)
+        
+        # Memory: Keep track of conversation history
+        self.conversation_history: List[Dict[str, str]] = []
+        
+        print(f"✅ {self.name} initialized and ready!")
+    
+    def think(self, user_message: str, max_tokens: int = 2000) -> str:
+        """
+        Make the agent think and respond
+        
+        This is like asking the agent a question and getting an answer!
+        
+        Args:
+            user_message: What you want to ask the agent
+            max_tokens: How long the response can be (default: 2000)
+            
+        Returns:
+            The agent's response as a string
+        """
+        # Add the user's message to memory
+        self.conversation_history.append({
+            "role": "user",
+            "content": user_message
+        })
+        
+        try:
+            # Call Claude API
+            response = self.client.messages.create(
+                model="claude-sonnet-4-20250514",  # Latest model!
+                max_tokens=max_tokens,
+                system=self.system_prompt,
+                messages=self.conversation_history
+            )
+            
+            # Get the response text
+            assistant_message = response.content[0].text
+            
+            # Add the agent's response to memory
+            self.conversation_history.append({
+                "role": "assistant",
+                "content": assistant_message
+            })
+            
+            return assistant_message
+            
+        except Exception as e:
+            error_msg = f"❌ Error in {self.name}: {str(e)}"
+            print(error_msg)
+            return error_msg
+    
+    def clear_memory(self):
+        """
+        Clear the conversation history
+        
+        Like giving the agent amnesia - starts fresh!
+        """
+        self.conversation_history = []
+        print(f"🧹 {self.name}'s memory cleared!")
+    
+    def get_info(self) -> Dict[str, Any]:
+        """
+        Get information about this agent
+        
+        Returns:
+            Dictionary with agent's name, role, and memory size
+        """
+        return {
+            "name": self.name,
+            "role": self.role,
+            "conversation_turns": len(self.conversation_history),
+            "system_prompt": self.system_prompt[:100] + "..."  # First 100 chars
+        }
+    
+    def __str__(self) -> str:
+        """String representation of the agent"""
+        return f"🤖 {self.name} ({self.role})"
+    
+    def __repr__(self) -> str:
+        """Developer representation of the agent"""
+        return f"BaseAgent(name='{self.name}', role='{self.role}')"

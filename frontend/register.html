@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - AI Research Data Collection Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .register-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 50px;
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .logo p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .role-selection {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .role-option {
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .role-option:hover {
+            border-color: #667eea;
+            background: #f8f9fa;
+        }
+
+        .role-option.selected {
+            border-color: #667eea;
+            background: #e0e7ff;
+        }
+
+        .role-option input[type="radio"] {
+            display: none;
+        }
+
+        .role-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .role-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .role-description {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        .register-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .register-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .register-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .alert-error {
+            background-color: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+        
+        .alert-success {
+            background-color: #efe;
+            color: #3c3;
+            border: 1px solid #cfc;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .back-home {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .back-home a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .back-home a:hover {
+            text-decoration: underline;
+        }
+
+        .info-text {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="back-home">
+            <a href="index.html">← Back to Home</a>
+        </div>
+
+        <div class="logo">
+            <h1>🔬 AI Research</h1>
+            <p>Create Your Account</p>
+        </div>
+
+        <div class="info-text">
+            <strong>Choose your role:</strong> Creators design studies, Participants complete forms.
+        </div>
+        
+        <div id="alert" class="alert"></div>
+        
+        <form id="registerForm">
+            <div class="form-group">
+                <label>Select Your Role</label>
+                <div class="role-selection">
+                    <label class="role-option" for="role-creator">
+                        <input type="radio" name="role" id="role-creator" value="study_designer" required>
+                        <div class="role-icon">👨‍🔬</div>
+                        <div class="role-title">Creator</div>
+                        <div class="role-description">Design and manage research studies</div>
+                    </label>
+                    
+                    <label class="role-option" for="role-participant">
+                        <input type="radio" name="role" id="role-participant" value="subject" required>
+                        <div class="role-icon">👤</div>
+                        <div class="role-title">Participant</div>
+                        <div class="role-description">Complete study forms and surveys</div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input 
+                    type="text" 
+                    id="username" 
+                    name="username" 
+                    required
+                    minlength="3"
+                    placeholder="Choose a username (min 3 characters)"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    required
+                    placeholder="your.email@example.com"
+                >
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    required
+                    minlength="6"
+                    placeholder="Choose a secure password (min 6 characters)"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="confirm-password">Confirm Password</label>
+                <input 
+                    type="password" 
+                    id="confirm-password" 
+                    name="confirm-password" 
+                    required
+                    minlength="6"
+                    placeholder="Re-enter your password"
+                >
+            </div>
+            
+            <button type="submit" id="registerBtn" class="register-btn">
+                Create Account
+            </button>
+        </form>
+        
+        <div class="footer">
+            <p>Already have an account? <a href="login.html">Login here</a></p>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://127.0.0.1:8000/api/v1';
+
+        // Handle role selection visual feedback
+        document.querySelectorAll('.role-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.role-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                this.querySelector('input[type="radio"]').checked = true;
+            });
+        });
+        
+        // Handle form submission
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const role = document.querySelector('input[name="role"]:checked')?.value;
+            const registerBtn = document.getElementById('registerBtn');
+            const alertDiv = document.getElementById('alert');
+            
+            // Validate passwords match
+            if (password !== confirmPassword) {
+                alertDiv.className = 'alert alert-error';
+                alertDiv.textContent = '❌ Passwords do not match!';
+                alertDiv.style.display = 'block';
+                return;
+            }
+
+            // Validate role selection
+            if (!role) {
+                alertDiv.className = 'alert alert-error';
+                alertDiv.textContent = '❌ Please select a role!';
+                alertDiv.style.display = 'block';
+                return;
+            }
+            
+            // Disable button
+            registerBtn.disabled = true;
+            registerBtn.textContent = 'Creating Account...';
+            alertDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        username, 
+                        email, 
+                        password,
+                        role
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Registration failed');
+                }
+                
+                // Show success
+                alertDiv.className = 'alert alert-success';
+                alertDiv.textContent = '✅ Account created successfully! Redirecting to login...';
+                alertDiv.style.display = 'block';
+                
+                // Redirect to login after 2 seconds
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+                
+            } catch (error) {
+                alertDiv.className = 'alert alert-error';
+                alertDiv.textContent = '❌ ' + error.message;
+                alertDiv.style.display = 'block';
+                
+                // Re-enable button
+                registerBtn.disabled = false;
+                registerBtn.textContent = 'Create Account';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enroll in Study - AI Research Data Collection Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .enroll-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 50px;
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .logo p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .info-box {
+            background: #e0e7ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .info-box p {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+            color: #555;
+        }
+
+        .info-box li {
+            margin-bottom: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1.2em;
+            text-align: center;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: border-color 0.3s;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .code-hint {
+            text-align: center;
+            color: #999;
+            font-size: 0.9em;
+            margin-top: 8px;
+        }
+        
+        .enroll-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .enroll-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .enroll-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .alert-error {
+            background-color: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+        
+        .alert-success {
+            background-color: #efe;
+            color: #3c3;
+            border: 1px solid #cfc;
+        }
+
+        .alert-info {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .back-home {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .back-home a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .back-home a:hover {
+            text-decoration: underline;
+        }
+
+        .study-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .study-info h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .study-info p {
+            color: #666;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="enroll-container">
+        <div class="back-home">
+            <a href="index.html">← Back to Home</a>
+        </div>
+
+        <div class="logo">
+            <h1>🎯 Join a Study</h1>
+            <p>Enroll with Access Code</p>
+        </div>
+
+        <div class="info-box">
+            <h3>📋 How to Enroll</h3>
+            <p>To participate in a research study, you'll need:</p>
+            <ul>
+                <li>A unique access code from the study creator</li>
+                <li>An active participant account</li>
+            </ul>
+            <p style="margin-top: 15px;"><strong>Don't have an account?</strong> <a href="register.html" style="color: #667eea;">Register as a Participant</a></p>
+        </div>
+        
+        <div id="alert" class="alert"></div>
+
+        <div id="studyInfo" class="study-info"></div>
+        
+        <form id="enrollForm">
+            <div class="form-group">
+                <label for="accessCode">Access Code</label>
+                <input 
+                    type="text" 
+                    id="accessCode" 
+                    name="accessCode" 
+                    required
+                    placeholder="STUDY-CODE"
+                    maxlength="20"
+                >
+                <div class="code-hint">Enter the code provided by the study creator</div>
+            </div>
+            
+            <button type="submit" id="enrollBtn" class="enroll-btn">
+                Verify & Enroll
+            </button>
+        </form>
+        
+        <div class="footer">
+            <p>Already enrolled? <a href="login.html">Login here</a></p>
+            <p style="margin-top: 10px;">Need help? Contact your study coordinator</p>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://127.0.0.1:8000/api/v1';
+        
+        // Handle form submission
+        document.getElementById('enrollForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const accessCode = document.getElementById('accessCode').value.trim().toUpperCase();
+            const enrollBtn = document.getElementById('enrollBtn');
+            const alertDiv = document.getElementById('alert');
+            const studyInfoDiv = document.getElementById('studyInfo');
+            
+            // Disable button
+            enrollBtn.disabled = true;
+            enrollBtn.textContent = 'Verifying...';
+            alertDiv.style.display = 'none';
+            studyInfoDiv.style.display = 'none';
+            
+            try {
+                // First, validate the access code
+                const validateResponse = await fetch(`${API_URL}/enrollment/validate/${accessCode}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!validateResponse.ok) {
+                    const errorData = await validateResponse.json();
+                    throw new Error(errorData.detail || 'Invalid access code');
+                }
+                
+                const validationData = await validateResponse.json();
+                
+                // Show study information
+                studyInfoDiv.innerHTML = `
+                    <h3>✅ Valid Study Found!</h3>
+                    <p><strong>Study:</strong> ${validationData.study_name || 'Research Study'}</p>
+                    <p><strong>Duration:</strong> ${validationData.duration || 'Variable'}</p>
+                    <p><strong>Description:</strong> ${validationData.description || 'Participate in this research study'}</p>
+                `;
+                studyInfoDiv.style.display = 'block';
+                
+                // Show success message with next steps
+                alertDiv.className = 'alert alert-info';
+                alertDiv.innerHTML = `
+                    <strong>Next Steps:</strong><br>
+                    1. If you don't have an account, <a href="register.html?code=${accessCode}" style="color: #0369a1; text-decoration: underline;">register as a Participant</a><br>
+                    2. If you have an account, <a href="login.html?code=${accessCode}" style="color: #0369a1; text-decoration: underline;">login to enroll</a>
+                `;
+                alertDiv.style.display = 'block';
+                
+                enrollBtn.textContent = '✅ Code Verified!';
+                
+                // Store the code for use after login/registration
+                sessionStorage.setItem('pendingEnrollmentCode', accessCode);
+                
+                // Auto-redirect to login after 3 seconds
+                setTimeout(() => {
+                    window.location.href = `login.html?code=${accessCode}`;
+                }, 3000);
+                
+            } catch (error) {
+                alertDiv.className = 'alert alert-error';
+                alertDiv.textContent = '❌ ' + error.message;
+                alertDiv.style.display = 'block';
+                
+                // Re-enable button
+                enrollBtn.disabled = false;
+                enrollBtn.textContent = 'Verify & Enroll';
+            }
+        });
+
+        // Auto-fill if code is in URL
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            if (code) {
+                document.getElementById('accessCode').value = code;
+            }
+        });
+    </script>
+</body>
+</html>

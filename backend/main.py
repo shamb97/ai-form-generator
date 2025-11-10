@@ -8,10 +8,11 @@ Features:
 - Phase tracking, events, navigation (Day 3)
 - Study configuration module (Day 3 extension)
 - Intra-form skip logic (Day 4)
+- Database persistence (Day 5)
+- Multi-role authentication system (NEW!)
 
 Next Steps:
 - Informed consent system
-- Database persistence
 """
 
 # ============================================================================
@@ -25,6 +26,7 @@ import re
 from pathlib import Path
 from typing import Optional
 from datetime import datetime
+from designer_api import router as designer_router
 
 # Environment and configuration
 from dotenv import load_dotenv
@@ -34,12 +36,24 @@ ENV_PATH = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=ENV_PATH)
 
 # FastAPI and related
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field  # ← FIXED: Added Field import
+from pydantic import BaseModel, Field
 
 # External services
 import anthropic
+
+# Database
+from database import (
+    init_db, get_db, 
+    create_study, create_form, create_day_type,
+    get_all_studies, get_study, get_forms_by_study
+)
+
+# Authentication (NEW!)
+from auth_database import init_db as init_auth_db
+from auth_api import router as auth_router
+from designer_api import router as designer_router
 
 # Local modules
 from scheduler import calculate_lcm_schedule, ScheduleRequest, ScheduleResponse
@@ -64,6 +78,14 @@ from consent import (
     ConsentType
 )
 
+# AI Agents (NEW!)
+from agents.base_agent import BaseAgent
+from agents.form_designer_agent import FormDesignerAgent
+from agents.schedule_optimizer_agent import ScheduleOptimizerAgent
+from agents.policy_recommender_agent import PolicyRecommenderAgent
+from agents.clinical_compliance_agent import ClinicalComplianceAgent
+from agents.reflection_qa_agent import ReflectionQAAgent
+
 
 # ============================================================================
 # APP INITIALIZATION
@@ -71,27 +93,50 @@ from consent import (
 
 app = FastAPI(
     title="AI Form Generator API",
-    description="AI-powered clinical research form generation and scheduling",
-    version="1.0.0"
+    description="AI-powered clinical research form generation and scheduling with multi-role authentication",
+    version="2.0.0"
 )
 
 # Initialize Anthropic client
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 consent_manager = ConsentManager()
 
+# AI Agents (initialized on startup)
+form_designer = None
+schedule_optimizer = None
+policy_recommender = None
+compliance_checker = None
+qa_reviewer = None
+
+# Database initialization
+@app.on_event("startup")
+async def startup_event():
+    """Initialize databases and AI agents on startup."""
+    global form_designer, schedule_optimizer, policy_recommender, compliance_checker, qa_reviewer
+    
+    # Initialize databases
+    init_db()  # Research forms database
+    init_auth_db()  # Authentication database
+    
+    # Initialize AI Agents
+    print("🤖 Initializing AI Agents...")
+    form_designer = FormDesignerAgent()
+    schedule_optimizer = ScheduleOptimizerAgent()
+    policy_recommender = PolicyRecommenderAgent()
+    compliance_checker = ClinicalComplianceAgent()
+    qa_reviewer = ReflectionQAAgent()
+    print("✅ All 5 AI agents initialized successfully!")
+    
+    print("🚀 Server started - All systems ready!")
+
 
 # ============================================================================
 # CORS MIDDLEWARE
 # ============================================================================
 
-origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:8080",
-    "http://127.0.0.1:8080",
-]
+# Allow all origins for development/demo
+# In production, specify exact origins
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -100,6 +145,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ============================================================================
+# INCLUDE ROUTERS
+# ============================================================================
+
+# Include authentication router (NEW!)
+app.include_router(auth_router)
+app.include_router(designer_router)
 
 
 # ============================================================================
@@ -241,15 +295,29 @@ def root():
     """Root endpoint - API information."""
     return {
         "status": "ok",
-        "message": "AI Form Generator API - Running",
-        "version": "1.0.0",
+        "message": "AI Form Generator API - Running with AI Agents & Authentication",
+        "version": "2.0.0",
         "endpoints": {
             "health": "/health",
             "docs": "/docs",
+            "authentication": "/api/v1/auth/*",
             "form_generation": "/api/v1/forms/generate",
+            "ai_form_design": "/api/v1/ai/design-form",
+            "ai_schedule_optimize": "/api/v1/ai/optimize-schedule",
+            "ai_policy_recommend": "/api/v1/ai/recommend-policies",
+            "ai_compliance_check": "/api/v1/ai/check-compliance",
+            "ai_quality_review": "/api/v1/ai/review-quality",
             "schedule_generation": "/api/v1/schedule/generate",
             "skip_logic_evaluation": "/api/v1/forms/evaluate-skip-logic",
-            "study_configuration": "/api/v1/studies/configure"
+            "study_configuration": "/api/v1/studies/configure",
+            "database_studies": "/api/v1/studies"
+        },
+        "ai_agents": {
+            "form_designer": "Converts natural language to JSON form schemas",
+            "schedule_optimizer": "Optimizes schedules using LCM algorithm with AI reasoning",
+            "policy_recommender": "Suggests validation rules and skip logic",
+            "compliance_checker": "Checks regulatory compliance (GCP, HIPAA)",
+            "qa_reviewer": "Reviews quality of forms, studies, and schedules"
         }
     }
 
@@ -258,9 +326,27 @@ def root():
 def health():
     """Health check endpoint."""
     api_key_present = bool(os.getenv("ANTHROPIC_API_KEY"))
+    agents_initialized = all([
+        form_designer is not None,
+        schedule_optimizer is not None,
+        policy_recommender is not None,
+        compliance_checker is not None,
+        qa_reviewer is not None
+    ])
+    
     return {
         "ok": True,
         "api_key_configured": api_key_present,
+        "database_initialized": True,
+        "auth_enabled": True,
+        "ai_agents_initialized": agents_initialized,
+        "ai_agents": {
+            "form_designer": form_designer is not None,
+            "schedule_optimizer": schedule_optimizer is not None,
+            "policy_recommender": policy_recommender is not None,
+            "compliance_checker": compliance_checker is not None,
+            "qa_reviewer": qa_reviewer is not None
+        },
         "python_version": f"{os.sys.version_info.major}.{os.sys.version_info.minor}"
     }
 
@@ -345,6 +431,362 @@ async def generate_form(request: FormGenerationRequest):
 
 
 # ============================================================================
+# AI AGENT ENDPOINTS (NEW!)
+# ============================================================================
+
+class AIFormDesignRequest(BaseModel):
+    """Request for AI form design using Form Designer Agent."""
+    description: str = Field(description="Natural language description of the form")
+
+
+class AIFormDesignResponse(BaseModel):
+    """Response from Form Designer Agent."""
+    success: bool
+    form_schema: Optional[dict] = None
+    error: Optional[str] = None
+
+
+class AIScheduleOptimizeRequest(BaseModel):
+    """Request for AI schedule optimization."""
+    frequencies: list[int] = Field(description="List of form frequencies in days")
+    study_duration: Optional[int] = None
+
+
+class AIScheduleOptimizeResponse(BaseModel):
+    """Response from Schedule Optimizer Agent."""
+    success: bool
+    lcm: Optional[int] = None
+    reasoning: Optional[str] = None
+    schedule_summary: Optional[dict] = None
+    error: Optional[str] = None
+
+
+class AIPolicyRequest(BaseModel):
+    """Request for AI policy recommendations."""
+    form_schema: dict = Field(description="Form schema to analyze")
+
+
+class AIPolicyResponse(BaseModel):
+    """Response from Policy Recommender Agent."""
+    success: bool
+    recommendations: Optional[dict] = None
+    error: Optional[str] = None
+
+
+class AIComplianceRequest(BaseModel):
+    """Request for AI compliance check."""
+    study_design: dict = Field(description="Study design to check")
+
+
+class AIComplianceResponse(BaseModel):
+    """Response from Clinical Compliance Agent."""
+    success: bool
+    compliance_report: Optional[dict] = None
+    error: Optional[str] = None
+
+
+class AIQARequest(BaseModel):
+    """Request for AI quality review."""
+    content: dict = Field(description="Content to review")
+    review_type: str = Field(default="form", description="Type: form, study, schedule")
+
+
+class AIQAResponse(BaseModel):
+    """Response from Reflection QA Agent."""
+    success: bool
+    quality_score: Optional[int] = None
+    feedback: Optional[dict] = None
+    error: Optional[str] = None
+
+
+@app.post("/api/v1/ai/design-form", response_model=AIFormDesignResponse)
+async def ai_design_form(request: AIFormDesignRequest):
+    """
+    Use Form Designer Agent to create a form from natural language.
+    
+    This is more sophisticated than the basic generation endpoint - it uses
+    the specialized agent with clinical research expertise.
+    
+    Example:
+        POST /api/v1/ai/design-form
+        {
+            "description": "Daily pain diary with location, intensity, and medication tracking"
+        }
+    """
+    if not form_designer:
+        return AIFormDesignResponse(
+            success=False,
+            error="Form Designer Agent not initialized"
+        )
+    
+    try:
+        print(f"🎨 Form Designer Agent: Processing '{request.description[:50]}...'")
+        
+        # Use the agent to design the form
+        result = form_designer.design_form(request.description)
+        
+        # Check if there was an error
+        if "error" in result:
+            return AIFormDesignResponse(
+                success=False,
+                error=result["error"]
+            )
+        
+        print(f"✅ Form designed: {result.get('form_name', 'Unknown')}")
+        
+        return AIFormDesignResponse(
+            success=True,
+            form_schema=result
+        )
+        
+    except Exception as e:
+        print(f"❌ AI Form Design Error: {e}")
+        return AIFormDesignResponse(
+            success=False,
+            error=str(e)
+        )
+
+@app.post("/api/v1/ai/refine-form", response_model=AIFormDesignResponse)
+async def ai_refine_form(request: dict):
+    """
+    Use Form Designer Agent to refine an existing form.
+    
+    Example:
+        POST /api/v1/ai/refine-form
+        {
+            "form_schema": { existing form... },
+            "refinement": "Add a date field that auto-populates with today's date"
+        }
+    """
+    if not form_designer:
+        return AIFormDesignResponse(
+            success=False,
+            error="Form Designer Agent not initialized"
+        )
+    
+    try:
+        form_schema = request.get('form_schema')
+        refinement = request.get('refinement')
+        
+        if not form_schema or not refinement:
+            return AIFormDesignResponse(
+                success=False,
+                error="Both form_schema and refinement are required"
+            )
+        
+        print(f"🔧 Form Designer Agent: Refining form - '{refinement[:50]}...'")
+        
+        # Use the agent to refine the form
+        result = form_designer.refine_form(form_schema, refinement)
+        
+        # Check if there was an error
+        if "error" in result:
+            return AIFormDesignResponse(
+                success=False,
+                error=result["error"]
+            )
+        
+        print(f"✅ Form refined: {result.get('form_name', 'Unknown')}")
+        
+        return AIFormDesignResponse(
+            success=True,
+            form_schema=result
+        )
+        
+    except Exception as e:
+        print(f"❌ AI Form Refinement Error: {e}")
+        return AIFormDesignResponse(
+            success=False,
+            error=str(e)
+        )
+
+@app.post("/api/v1/ai/optimize-schedule", response_model=AIScheduleOptimizeResponse)
+async def ai_optimize_schedule(request: AIScheduleOptimizeRequest):
+    """
+    Use Schedule Optimizer Agent to find optimal schedule with AI reasoning.
+    
+    Example:
+        POST /api/v1/ai/optimize-schedule
+        {
+            "frequencies": [7, 14, 30],
+            "study_duration": 90
+        }
+    """
+    if not schedule_optimizer:
+        return AIScheduleOptimizeResponse(
+            success=False,
+            error="Schedule Optimizer Agent not initialized"
+        )
+    
+    try:
+        print(f"📅 Schedule Optimizer Agent: Processing {len(request.frequencies)} frequencies")
+        
+        # Convert frequency list to form list (agent expects list of dicts)
+        forms = [
+            {
+                "form_name": f"Form {i+1}",
+                "frequency": freq
+            }
+            for i, freq in enumerate(request.frequencies)
+        ]
+        
+        # Use the agent to optimize
+        result = schedule_optimizer.optimize_schedule(
+            forms,
+            request.study_duration or 90
+        )
+        
+        # Check for error
+        if "error" in result:
+            return AIScheduleOptimizeResponse(
+                success=False,
+                error=result["error"]
+            )
+        
+        lcm = result.get('recommended_lcm')
+        print(f"✅ Schedule optimized: LCM = {lcm} days")
+        
+        return AIScheduleOptimizeResponse(
+            success=True,
+            lcm=lcm,
+            reasoning=result.get('schedule_rationale'),
+            schedule_summary={
+                "form_distribution": result.get('form_distribution', {}),
+                "burden_analysis": result.get('participant_burden_analysis', {}),
+                "recommendations": result.get('recommendations', [])
+            }
+        )
+        
+    except Exception as e:
+        print(f"❌ AI Schedule Optimization Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return AIScheduleOptimizeResponse(
+            success=False,
+            error=str(e)
+        )
+
+
+@app.post("/api/v1/ai/recommend-policies", response_model=AIPolicyResponse)
+async def ai_recommend_policies(request: AIPolicyRequest):
+    """
+    Use Policy Recommender Agent to suggest validation rules and skip logic.
+    
+    Example:
+        POST /api/v1/ai/recommend-policies
+        {
+            "form_schema": { ... }
+        }
+    """
+    if not policy_recommender:
+        return AIPolicyResponse(
+            success=False,
+            error="Policy Recommender Agent not initialized"
+        )
+    
+    try:
+        print(f"📋 Policy Recommender Agent: Analyzing form")
+        
+        # Use the agent to recommend policies
+        result = policy_recommender.recommend_policies(request.form_schema)
+        
+        print(f"✅ Policies recommended")
+        
+        return AIPolicyResponse(
+            success=True,
+            recommendations=result
+        )
+        
+    except Exception as e:
+        print(f"❌ AI Policy Recommendation Error: {e}")
+        return AIPolicyResponse(
+            success=False,
+            error=str(e)
+        )
+
+
+@app.post("/api/v1/ai/check-compliance", response_model=AIComplianceResponse)
+async def ai_check_compliance(request: AIComplianceRequest):
+    """
+    Use Clinical Compliance Agent to check regulatory compliance.
+    
+    Example:
+        POST /api/v1/ai/check-compliance
+        {
+            "study_design": { ... }
+        }
+    """
+    if not compliance_checker:
+        return AIComplianceResponse(
+            success=False,
+            error="Clinical Compliance Agent not initialized"
+        )
+    
+    try:
+        print(f"🔍 Clinical Compliance Agent: Checking compliance")
+        
+        # Use the agent to check compliance
+        result = compliance_checker.check_compliance(request.study_design)
+        
+        print(f"✅ Compliance check complete")
+        
+        return AIComplianceResponse(
+            success=True,
+            compliance_report=result
+        )
+        
+    except Exception as e:
+        print(f"❌ AI Compliance Check Error: {e}")
+        return AIComplianceResponse(
+            success=False,
+            error=str(e)
+        )
+
+
+@app.post("/api/v1/ai/review-quality", response_model=AIQAResponse)
+async def ai_review_quality(request: AIQARequest):
+    """
+    Use Reflection QA Agent to review quality of forms/studies/schedules.
+    
+    Example:
+        POST /api/v1/ai/review-quality
+        {
+            "content": { ... },
+            "review_type": "form"
+        }
+    """
+    if not qa_reviewer:
+        return AIQAResponse(
+            success=False,
+            error="Reflection QA Agent not initialized"
+        )
+    
+    try:
+        print(f"🔍 Reflection QA Agent: Reviewing {request.review_type}")
+        
+        # Use the agent to review quality
+        result = qa_reviewer.review_quality(
+            request.content,
+            request.review_type
+        )
+        
+        print(f"✅ Quality review complete")
+        
+        return AIQAResponse(
+            success=True,
+            quality_score=result.get('score'),
+            feedback=result.get('feedback')
+        )
+        
+    except Exception as e:
+        print(f"❌ AI Quality Review Error: {e}")
+        return AIQAResponse(
+            success=False,
+            error=str(e)
+        )
+
+
+# ============================================================================
 # SKIP LOGIC ENDPOINTS
 # ============================================================================
 
@@ -352,52 +794,6 @@ async def generate_form(request: FormGenerationRequest):
 def evaluate_skip_logic(request: EvaluateSkipLogicRequest):
     """
     Evaluate skip logic for a form given current values.
-    
-    Used by frontend to determine which fields to show/hide in real-time
-    as the user fills out the form.
-    
-    Example:
-        POST /api/v1/forms/evaluate-skip-logic
-        {
-            "form_schema": {
-                "fields": [
-                    {
-                        "field_id": "has_symptoms",
-                        "type": "radio",
-                        "options": ["Yes", "No"]
-                    },
-                    {
-                        "field_id": "symptom_details",
-                        "type": "textarea",
-                        "required": true,
-                        "skip_logic": {
-                            "condition": {
-                                "field": "has_symptoms",
-                                "operator": "equals",
-                                "value": "Yes"
-                            },
-                            "action": "show",
-                            "target_fields": ["symptom_details"]
-                        }
-                    }
-                ]
-            },
-            "current_values": {
-                "has_symptoms": "Yes"
-            }
-        }
-        
-    Returns:
-        {
-            "success": true,
-            "visible_fields": {
-                "has_symptoms": true,
-                "symptom_details": true
-            },
-            "required_fields": ["symptom_details"],
-            "hidden_count": 0,
-            "visible_count": 2
-        }
     """
     try:
         evaluator = SkipLogicEvaluator(request.form_schema)
@@ -435,26 +831,6 @@ def evaluate_skip_logic(request: EvaluateSkipLogicRequest):
 def validate_form_with_skip_logic(request: ValidateFormWithSkipLogicRequest):
     """
     Validate form submission considering skip logic.
-    
-    Only validates visible required fields. Hidden fields are not required
-    even if marked as required in the schema.
-    
-    Example:
-        POST /api/v1/forms/validate-with-skip-logic
-        {
-            "form_schema": {...},
-            "submitted_values": {
-                "has_symptoms": "No",
-                "symptom_details": ""  // Not required because hidden
-            }
-        }
-        
-    Returns:
-        {
-            "success": true,
-            "is_valid": true,
-            "missing_required": []
-        }
     """
     try:
         evaluator = SkipLogicEvaluator(request.form_schema)
@@ -483,17 +859,6 @@ def validate_form_with_skip_logic(request: ValidateFormWithSkipLogicRequest):
 async def generate_schedule(request: ScheduleRequest):
     """
     Generate an LCM-based schedule for multiple forms.
-    
-    Example:
-        POST /api/v1/schedule/generate
-        {
-            "study_id": "study_001",
-            "study_duration_days": 28,
-            "forms": [
-                {"form_id": "daily_diary", "frequency_days": 1, "frequency_label": "Daily"},
-                {"form_id": "weekly_assessment", "frequency_days": 7, "frequency_label": "Weekly"}
-            ]
-        }
     """
     # Validate request
     if request.study_duration_days < 1:
@@ -543,26 +908,7 @@ def configure_study(
     custom_ui: Optional[dict] = None,
     custom_features: Optional[dict] = None
 ):
-    """
-    Create or update study configuration.
-    
-    Supports three modes:
-    1. Preset: preset="simple_survey" or "clinical_trial" or "minimal"
-    2. Custom: Provide custom_ui and/or custom_features dicts
-    3. Default: Uses simple_survey if nothing specified
-    
-    Examples:
-        # Using preset
-        POST /api/v1/studies/configure?study_id=S001&study_name=My+Survey&preset=simple_survey
-        
-        # Custom UI
-        POST /api/v1/studies/configure
-        {
-            "study_id": "S001",
-            "study_name": "My Survey",
-            "custom_ui": {"show_progress_bar": true, "show_phase_name": false}
-        }
-    """
+    """Create or update study configuration."""
     try:
         # Create configuration based on input
         if preset == "simple_survey":
@@ -595,8 +941,6 @@ def configure_study(
                 "message": "Configuration validation failed"
             }
         
-        # TODO: Save to database (Day 5)
-        
         return {
             "success": True,
             "configuration": config.model_dump(),
@@ -614,12 +958,7 @@ def configure_study(
 
 @app.get("/api/v1/studies/{study_id}/config")
 def get_study_config(study_id: str):
-    """
-    Get study configuration.
-    
-    Returns the full configuration for a study.
-    TODO: Load from database (Day 5)
-    """
+    """Get study configuration."""
     # For now, return a demo config
     config = StudyConfiguration.clinical_trial(study_id, "Demo Study")
     
@@ -632,29 +971,9 @@ def get_study_config(study_id: str):
 
 @app.post("/api/v1/studies/{study_id}/participant-view")
 def get_participant_view(study_id: str, context: dict):
-    """
-    Get participant view data based on study configuration.
-    
-    Takes full study context and returns only the fields
-    enabled in the study configuration.
-    
-    Example:
-        POST /api/v1/studies/TEST001/participant-view
-        {
-            "progress_bar": 50,
-            "completion_pct": 50,
-            "phase_name": "Intervention",
-            "next_form": "Daily Diary"
-        }
-        
-    Returns filtered context based on configuration.
-    """
+    """Get participant view data based on study configuration."""
     try:
-        # TODO: Load config from database (Day 5)
-        # For now, use clinical trial preset
         config = StudyConfiguration.clinical_trial(study_id, "Demo Study")
-        
-        # Filter context based on configuration
         view_data = config.get_participant_view_data(context)
         
         return {
@@ -674,11 +993,7 @@ def get_participant_view(study_id: str, context: dict):
 
 @app.get("/api/v1/studies/presets")
 def list_presets():
-    """
-    List available configuration presets.
-    
-    Returns details about each preset to help users choose.
-    """
+    """List available configuration presets."""
     return {
         "presets": {
             "simple_survey": {
@@ -710,6 +1025,8 @@ def list_presets():
             }
         }
     }
+
+
 # ============================================================================
 # INFORMED CONSENT ENDPOINTS
 # ============================================================================
@@ -743,25 +1060,7 @@ class ConsentAcceptanceRequest(BaseModel):
 
 @app.post("/api/v1/consent/create")
 def create_consent_form(request: CreateConsentRequest):
-    """
-    Create an informed consent form.
-    
-    Example:
-        POST /api/v1/consent/create
-        {
-            "study_id": "STUDY_001",
-            "study_title": "Mood and Exercise Study",
-            "pi_name": "Dr. Jane Smith",
-            "institution": "University Medical Center",
-            "purpose": "To understand exercise and mood...",
-            "procedures": "Daily surveys for 30 days...",
-            "risks": "Minimal risks...",
-            "benefits": "Insights into mood patterns...",
-            "contact_name": "Dr. Jane Smith",
-            "contact_email": "jane.smith@university.edu",
-            "version": "v1.0"
-        }
-    """
+    """Create an informed consent form."""
     try:
         # Create consent schema
         consent = create_standard_consent(
@@ -789,8 +1088,6 @@ def create_consent_form(request: CreateConsentRequest):
                 "message": "Consent validation failed"
             }
         
-        # TODO: Save to database (Day 5)
-        
         return {
             "success": True,
             "consent": consent.model_dump(),
@@ -808,12 +1105,7 @@ def create_consent_form(request: CreateConsentRequest):
 
 @app.get("/api/v1/consent/{consent_form_id}")
 def get_consent_form(consent_form_id: str):
-    """
-    Get a consent form for display.
-    
-    TODO: Load from database (Day 5)
-    For now, returns a demo consent.
-    """
+    """Get a consent form for display."""
     # Demo consent
     consent = create_standard_consent(
         study_id="DEMO_001",
@@ -836,22 +1128,9 @@ def get_consent_form(consent_form_id: str):
 
 @app.post("/api/v1/consent/accept")
 def accept_consent(request: ConsentAcceptanceRequest):
-    """
-    Accept/sign a consent form.
-    
-    Example:
-        POST /api/v1/consent/accept
-        {
-            "participant_id": "P001",
-            "participant_name": "John Doe",
-            "consent_form_id": "consent_STUDY_001",
-            "signature": "John Doe",
-            "ip_address": "192.168.1.100"
-        }
-    """
+    """Accept/sign a consent form."""
     try:
-        # TODO: Load actual consent form from database (Day 5)
-        # For now, use demo
+        # Demo consent
         consent = create_standard_consent(
             study_id="DEMO_001",
             study_title="Demo Study",
@@ -893,8 +1172,6 @@ def accept_consent(request: ConsentAcceptanceRequest):
         # Store record
         consent_manager.add_consent_record(record)
         
-        # TODO: Save to database (Day 5)
-        
         return {
             "success": True,
             "record_id": record.record_id,
@@ -912,12 +1189,7 @@ def accept_consent(request: ConsentAcceptanceRequest):
 
 @app.get("/api/v1/consent/status/{participant_id}")
 def check_consent_status(participant_id: str, study_id: Optional[str] = None):
-    """
-    Check if participant has valid consent.
-    
-    Example:
-        GET /api/v1/consent/status/P001?study_id=STUDY_001
-    """
+    """Check if participant has valid consent."""
     try:
         if study_id:
             has_consent, reason = consent_manager.has_consented(
@@ -950,12 +1222,7 @@ def withdraw_consent_endpoint(
     study_id: str,
     reason: Optional[str] = None
 ):
-    """
-    Withdraw participant's consent.
-    
-    Example:
-        POST /api/v1/consent/withdraw?participant_id=P001&study_id=STUDY_001&reason=Changed+mind
-    """
+    """Withdraw participant's consent."""
     try:
         success = consent_manager.withdraw_consent(
             participant_id,
@@ -986,14 +1253,7 @@ def get_consent_history_endpoint(
     participant_id: str,
     study_id: Optional[str] = None
 ):
-    """
-    Get complete consent history for a participant.
-    
-    Includes withdrawn consents (audit trail).
-    
-    Example:
-        GET /api/v1/consent/history/P001?study_id=STUDY_001
-    """
+    """Get complete consent history for a participant."""
     try:
         history = consent_manager.get_consent_history(
             participant_id,
@@ -1013,6 +1273,117 @@ def get_consent_history_endpoint(
             "error": str(e)
         }
 
+
+# ============================================================================
+# DATABASE ENDPOINTS
+# ============================================================================
+
+@app.post("/api/v1/studies/create")
+def create_study_endpoint(
+    name: str,
+    description: str = "",
+    db = Depends(get_db)
+):
+    """
+    Create a new study and store in database.
+    
+    Example:
+        POST /api/v1/studies/create?name=My+Study&description=Test+study
+    """
+    try:
+        study = create_study(db, name, description)
+        return {
+            "success": True,
+            "study_id": study.id,
+            "name": study.name,
+            "description": study.description,
+            "created_at": study.created_at.isoformat(),
+            "message": f"Study '{name}' created successfully"
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "Failed to create study"
+        }
+
+
+@app.get("/api/v1/studies")
+def list_studies(db = Depends(get_db)):
+    """
+    Get all studies from database.
+    
+    Example:
+        GET /api/v1/studies
+    """
+    try:
+        studies = get_all_studies(db)
+        return {
+            "success": True,
+            "count": len(studies),
+            "studies": [
+                {
+                    "id": s.id,
+                    "name": s.name,
+                    "description": s.description,
+                    "created_at": s.created_at.isoformat(),
+                    "form_count": len(s.forms)
+                }
+                for s in studies
+            ]
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "studies": []
+        }
+
+
+@app.get("/api/v1/studies/{study_id}")
+def get_study_details_endpoint(study_id: int, db = Depends(get_db)):
+    """
+    Get detailed information about a study.
+    
+    Example:
+        GET /api/v1/studies/1
+    """
+    try:
+        study = get_study(db, study_id)
+        if not study:
+            return {
+                "success": False,
+                "error": "Study not found"
+            }
+        
+        return {
+            "success": True,
+            "study": {
+                "id": study.id,
+                "name": study.name,
+                "description": study.description,
+                "created_at": study.created_at.isoformat(),
+                "forms": [
+                    {
+                        "id": f.id,
+                        "form_id": f.form_id,
+                        "title": f.title,
+                        "frequency": f.frequency,
+                        "created_at": f.created_at.isoformat()
+                    }
+                    for f in study.forms
+                ],
+                "form_count": len(study.forms),
+                "completion_count": len(study.completions)
+            }
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
 # ============================================================================
 # MAIN ENTRY POINT
 # ============================================================================
@@ -1020,5 +1391,16 @@ def get_consent_history_endpoint(
 if __name__ == "__main__":
     import uvicorn
     print("🚀 Starting AI Form Generator API...")
+    print("=" * 60)
     print("📚 Documentation: http://localhost:8000/docs")
+    print("🔐 Auth endpoints: http://localhost:8000/api/v1/auth/*")
+    print("🤖 AI Agent endpoints: http://localhost:8000/api/v1/ai/*")
+    print("=" * 60)
+    print("🤖 AI Agents Available:")
+    print("   1. Form Designer - Natural language → JSON forms")
+    print("   2. Schedule Optimizer - LCM scheduling with AI reasoning")
+    print("   3. Policy Recommender - Validation & skip logic suggestions")
+    print("   4. Clinical Compliance - GCP/HIPAA regulatory checks")
+    print("   5. Reflection QA - Quality review & scoring")
+    print("=" * 60)
     uvicorn.run(app, host="0.0.0.0", port=8000)
