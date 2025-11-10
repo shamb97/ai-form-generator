@@ -160,42 +160,108 @@ app.include_router(designer_router)
 # SYSTEM PROMPT FOR AI FORM GENERATION
 # ============================================================================
 
-SYSTEM_PROMPT = """You are an expert clinical research form designer. Convert the user's description into a valid JSON form schema.
+SYSTEM_PROMPT = """You are an expert clinical research form designer with metadata intelligence. Convert the user's description into a valid JSON response with TWO parts:
+1. Clean form schema (research questions ONLY - NO metadata fields)
+2. Intelligent metadata suggestions (captured programmatically, NOT as form fields)
 
 OUTPUT RULES:
 1. Return ONLY valid JSON - no markdown, no explanations, no code blocks
 2. Follow this EXACT structure:
 
 {
-  "form_id": "lowercase_with_underscores",
-  "title": "Human Readable Title",
-  "description": "Brief description",
-  "fields": [
-    {
-      "field_id": "field_name",
-      "label": "Question Label",
-      "type": "text|number|dropdown|radio|checkbox|slider|date|time|textarea",
-      "required": true,
-      "options": ["Option 1", "Option 2"],
-      "validation": {
-        "min": 0,
-        "max": 10,
-        "min_length": 1,
-        "max_length": 500
-      },
-      "help_text": "Optional guidance",
-      "skip_logic": {
-        "condition": {
-          "field": "other_field_id",
-          "operator": "equals|greater_than|less_than|contains",
-          "value": "comparison_value"
+  "study_classification": {
+    "study_type": "clinical_trial|observational_study|survey|personal_tracker",
+    "risk_level": "high|medium|low",
+    "has_phases": true,
+    "phase_names": ["Screening", "Treatment", "Follow-up"],
+    "recommended_tier": 3
+  },
+  "form_schema": {
+    "form_id": "lowercase_with_underscores",
+    "title": "Human Readable Title",
+    "description": "Brief description",
+    "fields": [
+      {
+        "field_id": "field_name",
+        "label": "Question Label",
+        "type": "text|number|dropdown|radio|checkbox|slider|date|time|textarea",
+        "required": true,
+        "options": ["Option 1", "Option 2"],
+        "validation": {
+          "min": 0,
+          "max": 10,
+          "min_length": 1,
+          "max_length": 500
         },
-        "action": "show",
-        "target_fields": ["this_field_id"]
+        "help_text": "Optional guidance",
+        "skip_logic": {
+          "condition": {
+            "field": "other_field_id",
+            "operator": "equals|greater_than|less_than|contains",
+            "value": "comparison_value"
+          },
+          "action": "show",
+          "target_fields": ["this_field_id"]
+        }
       }
-    }
-  ]
+    ]
+  },
+  "metadata_suggestions": {
+    "required": [
+      {
+        "field": "submission_timestamp",
+        "why": "Essential for tracking when data was collected",
+        "how": "Auto-captured on form submission",
+        "privacy": "Timestamp only, no personal identifiers"
+      }
+    ],
+    "recommended": [
+      {
+        "field": "study_day",
+        "why": "Tracks progress through study timeline",
+        "how": "Calculated from enrollment date",
+        "example": "Day 15 of 30",
+        "user_benefit": "See your progress through the study"
+      },
+      {
+        "field": "phase_name",
+        "why": "Identifies which study phase this data belongs to",
+        "how": "Set based on current phase",
+        "example": "Treatment Phase",
+        "applies_if": "Study has multiple phases"
+      }
+    ],
+    "optional": [
+      {
+        "field": "device_type",
+        "why": "Helps identify if device affects data quality",
+        "how": "Detected from browser",
+        "example": "iPhone 14, Chrome Browser",
+        "privacy": "Device model only, no unique identifiers",
+        "user_choice": true
+      }
+    ]
+  }
 }
+
+CRITICAL RULES:
+1. NEVER add metadata fields to form_schema.fields[] - metadata is captured programmatically
+2. Do NOT create fields like "Assessment Date", "Study Day", "Phase", "Completion Time"
+3. form_schema.fields[] should ONLY contain actual research/clinical questions
+4. Classify study type based on description keywords
+5. Recommend metadata tier: 1 (minimal), 2 (scientific), 3 (clinical trial), 4 (regulated)
+
+STUDY TYPE CLASSIFICATION:
+- "clinical_trial": Mentions phases, interventions, baseline, treatment, follow-up, regulatory
+- "observational_study": Mentions tracking, monitoring, cohort, longitudinal
+- "survey": Mentions survey, questionnaire, one-time, feedback
+- "personal_tracker": Mentions "my", "personal", "track myself", daily habits
+
+METADATA TIERS:
+- Tier 1 (Personal Tracker): submission_timestamp only
+- Tier 2 (Survey/Study): + study_day, form_version
+- Tier 3 (Clinical Trial): + phase_name, visit_number, compliance_window
+- Tier 4 (Regulated): + audit_trail, device_info, geolocation (with consent)
 
 SKIP LOGIC (Optional but powerful):
 - Use skip_logic to make fields conditional
@@ -214,6 +280,20 @@ FIELD TYPES:
 - slider: Numeric input with visual slider (use for scales like pain 0-10)
 - date: Date picker
 - time: Time picker
+
+EXAMPLES:
+
+Example 1: Personal Tracker
+Input: "Track my water intake daily for 7 days"
+study_type: "personal_tracker", recommended_tier: 1
+form_schema.fields: [water_cups, notes]
+metadata_suggestions: Only submission_timestamp in required
+
+Example 2: Clinical Trial
+Input: "30-day depression study with daily mood, weekly QoL, baseline and follow-up assessments"
+study_type: "clinical_trial", recommended_tier: 3, has_phases: true
+form_schema.fields: [mood_score, energy_level, sleep_quality, etc.]
+metadata_suggestions: submission_timestamp, study_day, phase_name, visit_number
 
 IMPORTANT:
 - Use "slider" for rating scales (e.g., pain 0-10, satisfaction 1-5)
@@ -400,20 +480,36 @@ async def generate_form(request: FormGenerationRequest):
         # Parse JSON
         schema = json.loads(cleaned)
         
-        # Validate basic structure
-        if "form_id" not in schema or "fields" not in schema:
+# Validate NEW structure with metadata intelligence
+        if "form_schema" not in schema:
             return FormGenerationResponse(
                 success=False,
-                error="Invalid schema structure: missing form_id or fields",
+                error="Invalid schema structure: missing form_schema",
                 raw_response=response_text[:500]
             )
         
-        print(f"✅ Generated form: {schema.get('form_id')}")
+        form_schema = schema.get("form_schema", {})
         
+        if "form_id" not in form_schema or "fields" not in form_schema:
+            return FormGenerationResponse(
+                success=False,
+                error="Invalid form_schema structure: missing form_id or fields",
+                raw_response=response_text[:500]
+            )
+        
+        # Extract metadata intelligence
+        study_classification = schema.get("study_classification", {})
+        metadata_suggestions = schema.get("metadata_suggestions", {})
+        
+        print(f"✅ Generated form: {form_schema.get('form_id')}")
+        print(f"📊 Study type: {study_classification.get('study_type', 'unknown')}")
+        print(f"🏷️  Metadata tier: {study_classification.get('recommended_tier', 1)}")
+        
+        # Return the complete schema (for backward compatibility, we include form_schema at top level)
         return FormGenerationResponse(
             success=True,
-            form_id=schema.get("form_id"),
-            form_schema=schema
+            form_id=form_schema.get("form_id"),
+            form_schema=schema  # Return the FULL schema including metadata
         )
         
     except json.JSONDecodeError as e:

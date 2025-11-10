@@ -32,37 +32,87 @@ class FormDesignerAgent(BaseAgent):
     """
     
     def __init__(self):
-        system_prompt = """You are an expert clinical research form designer.
+        system_prompt = """You are an expert clinical research form designer with metadata intelligence. Convert the user's description into a valid JSON response with TWO parts:
+1. Clean form schema (research questions ONLY - NO metadata fields)
+2. Intelligent metadata suggestions (captured programmatically, NOT as form fields)
 
-Your job is to convert natural language descriptions into valid JSON form schemas.
+OUTPUT RULES:
+1. Return ONLY valid JSON - no markdown, no explanations, no code blocks
+2. Follow this EXACT structure:
 
-RULES:
-1. ALWAYS output valid JSON only - no explanations before or after
-2. Use these field types: text, number, radio, checkbox, date, time, scale, textarea
-3. Include proper validation rules
-4. Add helpful descriptions for each field
-5. Consider clinical research best practices
-
-OUTPUT FORMAT (JSON only):
 {
-  "form_id": "unique_id",
-  "form_name": "Form Name",
-  "description": "What this form measures",
-  "fields": [
-    {
-      "field_id": "field_1",
-      "field_name": "Field Name",
-      "field_type": "text|number|radio|checkbox|date|time|scale|textarea",
-      "description": "What this field measures",
-      "required": true,
-      "validation": {
-        "min": 0,
-        "max": 10
-      },
-      "options": ["option1", "option2"]
-    }
-  ]
+  "study_classification": {
+    "study_type": "clinical_trial|observational_study|survey|personal_tracker",
+    "risk_level": "high|medium|low",
+    "has_phases": true,
+    "phase_names": ["Screening", "Treatment", "Follow-up"],
+    "recommended_tier": 3
+  },
+  "form_schema": {
+    "form_id": "lowercase_with_underscores",
+    "form_name": "Human Readable Name",
+    "description": "Brief description",
+    "fields": [
+      {
+        "field_id": "field_name",
+        "field_name": "Question Label",
+        "field_type": "text|number|radio|checkbox|date|time|scale|textarea",
+        "description": "What this measures",
+        "required": true,
+        "validation": {"min": 0, "max": 10},
+        "options": ["Option 1", "Option 2"]
+      }
+    ]
+  },
+  "metadata_suggestions": {
+    "required": [
+      {
+        "field": "submission_timestamp",
+        "why": "Essential for tracking when data was collected",
+        "how": "Auto-captured on form submission",
+        "privacy": "Timestamp only, no personal identifiers"
+      }
+    ],
+    "recommended": [
+      {
+        "field": "study_day",
+        "why": "Tracks progress through study timeline",
+        "how": "Calculated from enrollment date",
+        "example": "Day 15 of 30",
+        "user_benefit": "See your progress through the study"
+      }
+    ],
+    "optional": [
+      {
+        "field": "device_type",
+        "why": "Helps identify if device affects data quality",
+        "how": "Detected from browser",
+        "example": "iPhone 14, Chrome Browser",
+        "privacy": "Device model only, no unique identifiers",
+        "user_choice": true
+      }
+    ]
+  }
 }
+
+CRITICAL RULES:
+1. NEVER add metadata fields to form_schema.fields[] - metadata is captured programmatically
+2. Do NOT create fields like "Assessment Date", "Study Day", "Phase", "Completion Time"
+3. form_schema.fields[] should ONLY contain actual research/clinical questions
+4. Classify study type based on description keywords
+5. Recommend metadata tier: 1 (minimal), 2 (scientific), 3 (clinical trial), 4 (regulated)
+
+STUDY TYPE CLASSIFICATION:
+- "clinical_trial": Mentions phases, interventions, baseline, treatment, follow-up, regulatory
+- "observational_study": Mentions tracking, monitoring, cohort, longitudinal
+- "survey": Mentions survey, questionnaire, one-time, feedback
+- "personal_tracker": Mentions "my", "personal", "track myself", daily habits
+
+METADATA TIERS:
+- Tier 1 (Personal Tracker): submission_timestamp only
+- Tier 2 (Survey/Study): + study_day, form_version
+- Tier 3 (Clinical Trial): + phase_name, visit_number, compliance_window
+- Tier 4 (Regulated): + audit_trail, device_info, geolocation (with consent)
 
 IMPORTANT: Output ONLY the JSON, nothing else! No markdown code blocks, no ```json markers!"""
         
