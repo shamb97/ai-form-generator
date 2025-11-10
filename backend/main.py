@@ -26,7 +26,6 @@ import re
 from pathlib import Path
 from typing import Optional
 from datetime import datetime
-from designer_api import router as designer_router
 
 # Environment and configuration
 from dotenv import load_dotenv
@@ -44,32 +43,32 @@ from pydantic import BaseModel, Field
 import anthropic
 
 # Database
-from database import (
+from .database import (
     init_db, get_db, 
     create_study, create_form, create_day_type,
     get_all_studies, get_study, get_forms_by_study
 )
 
-# Authentication (NEW!)
-from auth_database import init_db as init_auth_db
-from auth_api import router as auth_router
-from designer_api import router as designer_router
+# Authentication
+from .auth_database import init_db as init_auth_db
+from .auth_api import router as auth_router
+from .designer_api import router as designer_router
 
 # Local modules
-from scheduler import calculate_lcm_schedule, ScheduleRequest, ScheduleResponse
-from study_config import (
+from .scheduler import calculate_lcm_schedule, ScheduleRequest, ScheduleResponse
+from .study_config import (
     StudyConfiguration,
     ParticipantUIConfig,
     StudyFeatures,
     validate_configuration
 )
-from skip_logic import (
+from .skip_logic import (
     SkipLogicEvaluator,
     SkipLogicRule,
     SkipCondition,
     add_skip_logic_to_field
 )
-from consent import (
+from .consent import (
     ConsentSchema,
     ConsentRecord,
     ConsentValidator,
@@ -78,13 +77,13 @@ from consent import (
     ConsentType
 )
 
-# AI Agents (NEW!)
-from agents.base_agent import BaseAgent
-from agents.form_designer_agent import FormDesignerAgent
-from agents.schedule_optimizer_agent import ScheduleOptimizerAgent
-from agents.policy_recommender_agent import PolicyRecommenderAgent
-from agents.clinical_compliance_agent import ClinicalComplianceAgent
-from agents.reflection_qa_agent import ReflectionQAAgent
+# AI Agents
+from .agents.base_agent import BaseAgent
+from .agents.form_designer_agent import FormDesignerAgent
+from .agents.schedule_optimizer_agent import ScheduleOptimizerAgent
+from .agents.policy_recommender_agent import PolicyRecommenderAgent
+from .agents.clinical_compliance_agent import ClinicalComplianceAgent
+from .agents.reflection_qa_agent import ReflectionQAAgent
 
 
 # ============================================================================

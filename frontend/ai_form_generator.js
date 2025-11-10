@@ -206,22 +206,22 @@ function addFormMessage(formSchema) {
     
     contentDiv.appendChild(label);
     contentDiv.appendChild(text);
-    
-    // Add metadata disclosure panel FIRST
+
+    // Then add form preview - pass FULL schema for buttons to use
+    const preview = createFormPreview(formSchema.form_schema || formSchema, formSchema);
+    contentDiv.appendChild(preview);
+
+    // Then metadata disclosure panel
     const metadataPanel = createMetadataPanel(formSchema);
     contentDiv.appendChild(metadataPanel);
 
-    // Then add form preview (pass the nested form_schema)
-    const preview = createFormPreview(formSchema.form_schema || formSchema);
-    contentDiv.appendChild(preview);
-
-    // Add data model specification section
+    // Finally data model specification section
     const dataModelSection = createDataModelSection(formSchema);
     contentDiv.appendChild(dataModelSection);
     
     messageDiv.appendChild(contentDiv);
     chatMessages.appendChild(messageDiv);
-    scrollToBottom();
+    messageDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 /**
@@ -551,8 +551,10 @@ function createDataModelSection(schema) {
                 // Validate the cleaned name
                 if (validateFieldName(cleanedName, e.target)) {
                     // Update the field name in the schema
-                    if (currentFormSchema && currentFormSchema.form_schema) {
-                        currentFormSchema.form_schema.fields[fieldIndex].field_id = cleanedName;
+                    // Handle both nested and flat schema structures
+                    const schema = currentFormSchema.form_schema || currentFormSchema;
+                    if (schema && schema.fields) {
+                        schema.fields[fieldIndex].field_id = cleanedName;
                         
                         // Update the input to show cleaned value
                         e.target.value = cleanedName;
@@ -567,8 +569,8 @@ function createDataModelSection(schema) {
                     }
                 } else {
                     // Validation failed - revert to original value
-                    e.target.value = currentFormSchema?.form_schema?.fields[fieldIndex]?.field_id || '';
-                }
+                    const schema = currentFormSchema.form_schema || currentFormSchema;
+                    e.target.value = schema?.fields[fieldIndex]?.field_id || '';                }
             });
         });
         
@@ -765,7 +767,7 @@ function getDataType(fieldType) {
 /**
  * Create a form preview card with interactive fields
  */
-function createFormPreview(schema) {
+function createFormPreview(schema, fullSchema = null) {
     const preview = document.createElement('div');
     preview.className = 'form-preview';
     
@@ -966,14 +968,12 @@ function createFormPreview(schema) {
     
     const approveButton = document.createElement('button');
     approveButton.className = 'action-button primary';
-    approveButton.innerHTML = '✅ Approve & Save Form';
-    approveButton.onclick = () => handleApproveForm(schema);
-    
+    approveButton.innerHTML = '✅ Approve Form + Data Configuration';
+    approveButton.onclick = () => handleApproveForm(fullSchema || schema);    
     const refineButton = document.createElement('button');
     refineButton.className = 'action-button secondary';
     refineButton.innerHTML = '🔧 Request Changes';
-    refineButton.onclick = () => handleRefineForm(schema);
-    
+    refineButton.onclick = () => handleRefineForm(fullSchema || schema);    
     const downloadButton = document.createElement('button');
     downloadButton.className = 'action-button secondary';
     downloadButton.innerHTML = '💾 Download JSON';
@@ -992,8 +992,7 @@ function createFormPreview(schema) {
  * Handle approve form action
  */
 function handleApproveForm(schema) {
-    addMessage('ai', `✅ Great! I'll save this form to your study. The form "${schema.form_name || schema.title}" is ready to use!`);
-    
+addMessage('ai', `✅ Great! I'll save this form with your configured metadata and field names. The form "${schema.form_name || schema.title}" is ready to use!`);    
     // You could add API call here to save the form to a study
     console.log('Form approved:', schema);
     

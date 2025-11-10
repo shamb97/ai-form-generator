@@ -198,7 +198,23 @@ Output the complete updated JSON form. No markdown code blocks!"""
             
             updated_schema = json.loads(response_clean)
             print(f"✅ Form refined successfully!")
-            return updated_schema
+            
+            # Check if AI returned full structure or just form fields
+            if "form_schema" in updated_schema:
+                # AI returned full structure - use it but preserve original metadata
+                result = {
+                    "form_schema": updated_schema.get("form_schema"),
+                    "metadata_suggestions": form_schema.get("metadata_suggestions", {}),
+                    "study_classification": form_schema.get("study_classification", {})
+                }
+            else:
+                # AI returned just form fields - wrap it properly
+                result = {
+                    "form_schema": updated_schema,
+                    "metadata_suggestions": form_schema.get("metadata_suggestions", {}),
+                    "study_classification": form_schema.get("study_classification", {})
+                }
+            return result
         except json.JSONDecodeError as e:
             print(f"❌ Error parsing refined JSON: {e}")
             return form_schema  # Return original if refinement failed
