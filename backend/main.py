@@ -9,7 +9,9 @@ Features:
 - Study configuration module (Day 3 extension)
 - Intra-form skip logic (Day 4)
 - Database persistence (Day 5)
-- Multi-role authentication system (NEW!)
+- Multi-role authentication system
+- Event Trigger System (Day 2 - NEW!)
+- Schedule Optimizer AI Agent (Day 2 - ENHANCED!)
 
 Next Steps:
 - Informed consent system
@@ -24,8 +26,8 @@ import os
 import json
 import re
 from pathlib import Path
-from typing import Optional
-from datetime import datetime
+from typing import Optional, List
+from datetime import datetime, date
 
 # Environment and configuration
 from dotenv import load_dotenv
@@ -77,6 +79,14 @@ from .consent import (
     ConsentType
 )
 
+# Event Handler (NEW!)
+from .event_handler import (
+    EventHandler,
+    DayTypeDefinition,
+    DayTypePriority,
+    create_default_event_handler
+)
+
 # AI Agents
 from .agents.base_agent import BaseAgent
 from .agents.form_designer_agent import FormDesignerAgent
@@ -92,8 +102,8 @@ from .agents.reflection_qa_agent import ReflectionQAAgent
 
 app = FastAPI(
     title="AI Form Generator API",
-    description="AI-powered clinical research form generation and scheduling with multi-role authentication",
-    version="2.0.0"
+    description="AI-powered clinical research form generation and scheduling with multi-role authentication and event system",
+    version="2.1.0"
 )
 
 # Initialize Anthropic client
@@ -107,11 +117,18 @@ policy_recommender = None
 compliance_checker = None
 qa_reviewer = None
 
+# Event Handler (initialized on startup) - NEW!
+event_handler = None
+
+# In-memory storage for events (in production, use database)
+# This is a simple implementation for Day 2 - will be enhanced with database on Day 5
+events_store = {}  # {study_id: {subject_id: [events]}}
+
 # Database initialization
 @app.on_event("startup")
 async def startup_event():
-    """Initialize databases and AI agents on startup."""
-    global form_designer, schedule_optimizer, policy_recommender, compliance_checker, qa_reviewer
+    """Initialize databases, AI agents, and event handler on startup."""
+    global form_designer, schedule_optimizer, policy_recommender, compliance_checker, qa_reviewer, event_handler
     
     # Initialize databases
     init_db()  # Research forms database
@@ -125,6 +142,11 @@ async def startup_event():
     compliance_checker = ClinicalComplianceAgent()
     qa_reviewer = ReflectionQAAgent()
     print("✅ All 5 AI agents initialized successfully!")
+    
+    # Initialize Event Handler (NEW!)
+    print("⚡ Initializing Event Handler...")
+    event_handler = create_default_event_handler()
+    print("✅ Event handler initialized with default day types!")
     
     print("🚀 Server started - All systems ready!")
 
@@ -150,7 +172,7 @@ app.add_middleware(
 # INCLUDE ROUTERS
 # ============================================================================
 
-# Include authentication router (NEW!)
+# Include authentication router
 app.include_router(auth_router)
 app.include_router(designer_router)
 
@@ -357,6 +379,55 @@ class ValidateFormResponse(BaseModel):
     error: Optional[str] = None
 
 
+# --- Event System Models (NEW!) ---
+
+class EventTriggerRequest(BaseModel):
+    """Request to trigger an event."""
+    study_id: int = Field(description="Study ID")
+    subject_id: int = Field(description="Subject ID")
+    event_type: str = Field(description="Type: baseline, eot, early_termination, adverse_event, protocol_deviation")
+    event_name: str = Field(description="Human-readable event name")
+    trigger_day: int = Field(description="Study day when event occurred")
+    metadata: Optional[dict] = None
+
+
+class EventTriggerResponse(BaseModel):
+    """Response from event trigger."""
+    success: bool
+    event_id: str
+    triggered_forms: List[str]
+    priority_explanation: dict
+    message: str
+    error: Optional[str] = None
+
+
+class EventStatusResponse(BaseModel):
+    """Response with event status for a study."""
+    success: bool
+    study_id: int
+    total_events: int
+    events_by_type: dict
+    recent_events: List[dict]
+    error: Optional[str] = None
+
+
+class ScheduleRecalculationRequest(BaseModel):
+    """Request to recalculate schedule based on event."""
+    study_id: int
+    subject_id: int
+    event_day: int
+    event_type: str
+
+
+class ScheduleRecalculationResponse(BaseModel):
+    """Response from schedule recalculation."""
+    success: bool
+    affected_days: List[int]
+    new_schedule: dict
+    changes_summary: str
+    error: Optional[str] = None
+
+
 # --- Legacy/Utility Models ---
 
 class EchoIn(BaseModel):
@@ -374,8 +445,8 @@ def root():
     """Root endpoint - API information."""
     return {
         "status": "ok",
-        "message": "AI Form Generator API - Running with AI Agents & Authentication",
-        "version": "2.0.0",
+        "message": "AI Form Generator API - Running with AI Agents, Authentication & Event System",
+        "version": "2.1.0",
         "endpoints": {
             "health": "/health",
             "docs": "/docs",
@@ -387,6 +458,9 @@ def root():
             "ai_compliance_check": "/api/v1/ai/check-compliance",
             "ai_quality_review": "/api/v1/ai/review-quality",
             "schedule_generation": "/api/v1/schedule/generate",
+            "event_trigger": "/api/v1/events/trigger",
+            "event_status": "/api/v1/events/status/{study_id}",
+            "schedule_recalculate": "/api/v1/events/recalculate",
             "skip_logic_evaluation": "/api/v1/forms/evaluate-skip-logic",
             "study_configuration": "/api/v1/studies/configure",
             "database_studies": "/api/v1/studies"
@@ -397,6 +471,10 @@ def root():
             "policy_recommender": "Suggests validation rules and skip logic",
             "compliance_checker": "Checks regulatory compliance (GCP, HIPAA)",
             "qa_reviewer": "Reviews quality of forms, studies, and schedules"
+        },
+        "new_features": {
+            "event_system": "Trigger events that override regular schedules (baseline, EOT, early termination)",
+            "priority_resolution": "Events always win over regular schedules - bulletproof clash prevention"
         }
     }
 
@@ -419,12 +497,17 @@ def health():
         "database_initialized": True,
         "auth_enabled": True,
         "ai_agents_initialized": agents_initialized,
+        "event_handler_initialized": event_handler is not None,
         "ai_agents": {
             "form_designer": form_designer is not None,
             "schedule_optimizer": schedule_optimizer is not None,
             "policy_recommender": policy_recommender is not None,
             "compliance_checker": compliance_checker is not None,
             "qa_reviewer": qa_reviewer is not None
+        },
+        "event_system": {
+            "handler_ready": event_handler is not None,
+            "registered_day_types": len(event_handler.day_types) if event_handler else 0
         },
         "python_version": f"{os.sys.version_info.major}.{os.sys.version_info.minor}"
     }
@@ -479,7 +562,7 @@ async def generate_form(request: FormGenerationRequest):
         # Parse JSON
         schema = json.loads(cleaned)
         
-# Validate NEW structure with metadata intelligence
+        # Validate NEW structure with metadata intelligence
         if "form_schema" not in schema:
             return FormGenerationResponse(
                 success=False,
@@ -526,7 +609,7 @@ async def generate_form(request: FormGenerationRequest):
 
 
 # ============================================================================
-# AI AGENT ENDPOINTS (NEW!)
+# AI AGENT ENDPOINTS
 # ============================================================================
 
 class AIFormDesignRequest(BaseModel):
@@ -641,6 +724,7 @@ async def ai_design_form(request: AIFormDesignRequest):
             error=str(e)
         )
 
+
 @app.post("/api/v1/ai/refine-form", response_model=AIFormDesignResponse)
 async def ai_refine_form(request: dict):
     """
@@ -695,10 +779,14 @@ async def ai_refine_form(request: dict):
             error=str(e)
         )
 
+
 @app.post("/api/v1/ai/optimize-schedule", response_model=AIScheduleOptimizeResponse)
 async def ai_optimize_schedule(request: AIScheduleOptimizeRequest):
     """
     Use Schedule Optimizer Agent to find optimal schedule with AI reasoning.
+    
+    This endpoint combines the LCM algorithm (scheduler.py) with AI reasoning
+    to explain WHY the schedule is optimal and provide recommendations.
     
     Example:
         POST /api/v1/ai/optimize-schedule
@@ -719,7 +807,7 @@ async def ai_optimize_schedule(request: AIScheduleOptimizeRequest):
         # Convert frequency list to form list (agent expects list of dicts)
         forms = [
             {
-                "form_name": f"Form {i+1}",
+                "form_name": f"Form_{i+1}",
                 "frequency": freq
             }
             for i, freq in enumerate(request.frequencies)
@@ -740,6 +828,7 @@ async def ai_optimize_schedule(request: AIScheduleOptimizeRequest):
         
         lcm = result.get('recommended_lcm')
         print(f"✅ Schedule optimized: LCM = {lcm} days")
+        print(f"📊 AI Reasoning: {result.get('schedule_rationale', '')[:100]}...")
         
         return AIScheduleOptimizeResponse(
             success=True,
@@ -877,6 +966,287 @@ async def ai_review_quality(request: AIQARequest):
         print(f"❌ AI Quality Review Error: {e}")
         return AIQAResponse(
             success=False,
+            error=str(e)
+        )
+
+
+# ============================================================================
+# EVENT TRIGGER SYSTEM ENDPOINTS (NEW! - DAY 2)
+# ============================================================================
+
+@app.post("/api/v1/events/trigger", response_model=EventTriggerResponse)
+async def trigger_event(request: EventTriggerRequest):
+    """
+    Trigger an event that overrides regular schedule.
+    
+    Events always take priority over regular day types.
+    
+    Event Types:
+    - baseline: Study start (consent, demographics)
+    - eot: End of Treatment (final assessments)
+    - early_termination: Early withdrawal (exit questionnaire)
+    - adverse_event: Safety reporting
+    - protocol_deviation: Protocol violation
+    
+    Example:
+        POST /api/v1/events/trigger
+        {
+            "study_id": 1,
+            "subject_id": 101,
+            "event_type": "adverse_event",
+            "event_name": "Headache reported",
+            "trigger_day": 15,
+            "metadata": {"severity": "mild"}
+        }
+    """
+    if not event_handler:
+        return EventTriggerResponse(
+            success=False,
+            event_id="",
+            triggered_forms=[],
+            priority_explanation={},
+            message="Event handler not initialized",
+            error="Event handler not initialized"
+        )
+    
+    try:
+        print(f"⚡ Event Trigger: {request.event_type} for subject {request.subject_id} on day {request.trigger_day}")
+        
+        # Map event type to day type ID
+        event_type_map = {
+            "baseline": "EVENT_BASELINE",
+            "eot": "EVENT_EOT",
+            "early_termination": "EVENT_EARLY_TERM",
+            "adverse_event": "EVENT_ADVERSE",
+            "protocol_deviation": "EVENT_DEVIATION"
+        }
+        
+        day_type_id = event_type_map.get(request.event_type.lower())
+        
+        if not day_type_id:
+            return EventTriggerResponse(
+                success=False,
+                event_id="",
+                triggered_forms=[],
+                priority_explanation={},
+                message=f"Unknown event type: {request.event_type}",
+                error=f"Unknown event type: {request.event_type}"
+            )
+        
+        # Get the forms that should be triggered
+        # For now, assume regular schedule might include A_ONLY or AB
+        candidate_day_types = ["A_ONLY", "AB", day_type_id]
+        
+        # Use event handler to determine what should happen
+        active_day_type = event_handler.determine_active_day_type(candidate_day_types)
+        triggered_forms = active_day_type.forms if active_day_type else []
+        
+        # Get priority explanation
+        explanation = event_handler.get_priority_explanation(candidate_day_types)
+        
+        # Generate event ID
+        event_id = f"EVT_{request.study_id}_{request.subject_id}_{request.trigger_day}_{datetime.now().timestamp()}"
+        
+        # Store event in memory (in production, save to database)
+        if request.study_id not in events_store:
+            events_store[request.study_id] = {}
+        if request.subject_id not in events_store[request.study_id]:
+            events_store[request.study_id][request.subject_id] = []
+        
+        events_store[request.study_id][request.subject_id].append({
+            "event_id": event_id,
+            "event_type": request.event_type,
+            "event_name": request.event_name,
+            "trigger_day": request.trigger_day,
+            "triggered_at": datetime.now().isoformat(),
+            "triggered_forms": triggered_forms,
+            "metadata": request.metadata or {}
+        })
+        
+        print(f"✅ Event triggered: {len(triggered_forms)} forms activated")
+        print(f"📋 Forms: {triggered_forms}")
+        
+        return EventTriggerResponse(
+            success=True,
+            event_id=event_id,
+            triggered_forms=triggered_forms,
+            priority_explanation=explanation,
+            message=f"Event '{request.event_name}' triggered successfully. {len(triggered_forms)} forms activated."
+        )
+        
+    except Exception as e:
+        print(f"❌ Event Trigger Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return EventTriggerResponse(
+            success=False,
+            event_id="",
+            triggered_forms=[],
+            priority_explanation={},
+            message="Failed to trigger event",
+            error=str(e)
+        )
+
+
+@app.get("/api/v1/events/status/{study_id}", response_model=EventStatusResponse)
+async def get_event_status(study_id: int):
+    """
+    Get event status for a study.
+    
+    Returns:
+    - Total event count
+    - Events grouped by type
+    - Recent events (last 10)
+    
+    Example:
+        GET /api/v1/events/status/1
+    """
+    try:
+        print(f"📊 Getting event status for study {study_id}")
+        
+        if study_id not in events_store:
+            return EventStatusResponse(
+                success=True,
+                study_id=study_id,
+                total_events=0,
+                events_by_type={},
+                recent_events=[]
+            )
+        
+        # Collect all events for this study across all subjects
+        all_events = []
+        events_by_type = {}
+        
+        for subject_id, events in events_store[study_id].items():
+            for event in events:
+                all_events.append({
+                    "subject_id": subject_id,
+                    **event
+                })
+                
+                event_type = event['event_type']
+                if event_type not in events_by_type:
+                    events_by_type[event_type] = 0
+                events_by_type[event_type] += 1
+        
+        # Sort by triggered_at (most recent first)
+        all_events.sort(key=lambda e: e['triggered_at'], reverse=True)
+        
+        # Get recent 10
+        recent_events = all_events[:10]
+        
+        print(f"✅ Found {len(all_events)} events for study {study_id}")
+        
+        return EventStatusResponse(
+            success=True,
+            study_id=study_id,
+            total_events=len(all_events),
+            events_by_type=events_by_type,
+            recent_events=recent_events
+        )
+        
+    except Exception as e:
+        print(f"❌ Event Status Error: {e}")
+        return EventStatusResponse(
+            success=False,
+            study_id=study_id,
+            total_events=0,
+            events_by_type={},
+            recent_events=[],
+            error=str(e)
+        )
+
+
+@app.post("/api/v1/events/recalculate", response_model=ScheduleRecalculationResponse)
+async def recalculate_schedule(request: ScheduleRecalculationRequest):
+    """
+    Recalculate schedule based on an event.
+    
+    When an event occurs, this endpoint determines:
+    1. Which days are affected
+    2. How the schedule changes
+    3. What forms should now appear
+    
+    This is a simplified version for Day 2. Full implementation will
+    integrate with scheduler.py and database on Day 5.
+    
+    Example:
+        POST /api/v1/events/recalculate
+        {
+            "study_id": 1,
+            "subject_id": 101,
+            "event_day": 15,
+            "event_type": "eot"
+        }
+    """
+    if not event_handler:
+        return ScheduleRecalculationResponse(
+            success=False,
+            affected_days=[],
+            new_schedule={},
+            changes_summary="Event handler not initialized",
+            error="Event handler not initialized"
+        )
+    
+    try:
+        print(f"🔄 Recalculating schedule for subject {request.subject_id} after {request.event_type} event")
+        
+        # Map event type to day type
+        event_type_map = {
+            "baseline": "EVENT_BASELINE",
+            "eot": "EVENT_EOT",
+            "early_termination": "EVENT_EARLY_TERM"
+        }
+        
+        day_type_id = event_type_map.get(request.event_type.lower())
+        
+        if not day_type_id:
+            return ScheduleRecalculationResponse(
+                success=False,
+                affected_days=[],
+                new_schedule={},
+                changes_summary=f"Unknown event type: {request.event_type}",
+                error=f"Unknown event type: {request.event_type}"
+            )
+        
+        # For Day 2, we'll do a simplified recalculation
+        # Full implementation with scheduler.py integration comes on Day 5
+        
+        # Event overrides day it occurs on
+        affected_days = [request.event_day]
+        
+        # Get forms that should appear
+        event_day_type = event_handler.get_day_type(day_type_id)
+        triggered_forms = event_day_type.forms if event_day_type else []
+        
+        # Create simplified schedule update
+        new_schedule = {
+            str(request.event_day): {
+                "day_type": day_type_id,
+                "forms": triggered_forms,
+                "is_event": True,
+                "reason": f"Event {request.event_type} overrides regular schedule"
+            }
+        }
+        
+        changes_summary = f"Day {request.event_day} changed to {day_type_id} with {len(triggered_forms)} forms"
+        
+        print(f"✅ Schedule recalculated: {len(affected_days)} days affected")
+        
+        return ScheduleRecalculationResponse(
+            success=True,
+            affected_days=affected_days,
+            new_schedule=new_schedule,
+            changes_summary=changes_summary
+        )
+        
+    except Exception as e:
+        print(f"❌ Schedule Recalculation Error: {e}")
+        return ScheduleRecalculationResponse(
+            success=False,
+            affected_days=[],
+            new_schedule={},
+            changes_summary="Failed to recalculate schedule",
             error=str(e)
         )
 
@@ -1490,6 +1860,7 @@ if __name__ == "__main__":
     print("📚 Documentation: http://localhost:8000/docs")
     print("🔐 Auth endpoints: http://localhost:8000/api/v1/auth/*")
     print("🤖 AI Agent endpoints: http://localhost:8000/api/v1/ai/*")
+    print("⚡ Event System endpoints: http://localhost:8000/api/v1/events/*")
     print("=" * 60)
     print("🤖 AI Agents Available:")
     print("   1. Form Designer - Natural language → JSON forms")
@@ -1497,5 +1868,11 @@ if __name__ == "__main__":
     print("   3. Policy Recommender - Validation & skip logic suggestions")
     print("   4. Clinical Compliance - GCP/HIPAA regulatory checks")
     print("   5. Reflection QA - Quality review & scoring")
+    print("=" * 60)
+    print("⚡ Event System Features:")
+    print("   • Trigger events (baseline, EOT, early termination)")
+    print("   • Priority resolution (events override regular schedule)")
+    print("   • Schedule recalculation on event trigger")
+    print("   • Event status tracking per study")
     print("=" * 60)
     uvicorn.run(app, host="0.0.0.0", port=8000)
