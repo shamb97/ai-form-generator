@@ -4,11 +4,11 @@ Adapts existing agent APIs to work with LangGraph orchestrator
 """
 
 from typing import Dict, List, Any
-from agents.form_designer_agent import FormDesignerAgent
-from agents.schedule_optimizer_agent import ScheduleOptimizerAgent
-from agents.policy_recommender_agent import PolicyRecommenderAgent
-from agents.clinical_compliance_agent import ClinicalComplianceAgent
-from agents.reflection_qa_agent import ReflectionQAAgent
+from .agents.form_designer_agent import FormDesignerAgent
+from .agents.schedule_optimizer_agent import ScheduleOptimizerAgent
+from .agents.policy_recommender_agent import PolicyRecommenderAgent
+from .agents.clinical_compliance_agent import ClinicalComplianceAgent
+from .agents.reflection_qa_agent import ReflectionQAAgent
 
 
 class AdaptedFormDesigner:

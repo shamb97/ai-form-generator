@@ -1,0 +1,319 @@
+"""
+Conversation Manager
+Handles multi-turn dialogue for natural language study creation
+Maintains conversation state and orchestrates requirements gathering
+"""
+
+import anthropic
+import os
+import json
+from typing import Dict, List, Any, Optional
+from datetime import datetime
+from .langgraph_orchestrator import LangGraphOrchestrator
+
+
+SYSTEM_PROMPT = """You are an expert clinical research assistant helping researchers design studies.
+
+Your job is to have a natural conversation to gather requirements, then create a complete study configuration.
+
+CONVERSATION FLOW:
+1. Greet the user warmly
+2. Ask about their study goals
+3. Gather key details:
+   - Study type (tracking, survey, clinical trial)
+   - What data to collect (forms)
+   - How often (schedule/frequency)
+   - How long (duration)
+   - Special requirements
+
+4. When you have enough information, confirm with user
+5. Then trigger the study creation
+
+STYLE:
+- Friendly and professional
+- Ask ONE question at a time
+- Clarify ambiguities
+- Summarize back to user for confirmation
+
+When ready to create the study, your LAST message should include:
+[READY_TO_CREATE]
+
+Before that, include a text-based schedule preview in your response."""
+
+SCHEDULE_PREVIEW_PROMPT = """Based on the study requirements, create a TEXT-BASED schedule preview.
+
+Requirements:
+{requirements}
+
+Create a summary like this:
+```
+📅 SCHEDULE PREVIEW
+
+Study Duration: [X weeks/months]
+Total Forms: [N]
+
+Daily Schedule:
+- [Form Name]: Every [frequency]
+- [Form Name]: Every [frequency]
+
+LCM Cycle: [X days] (forms repeat every X days)
+
+Example Week:
+Day 1: Form A, Form B
+Day 2: Form A
+Day 3: Form A, Form C
+...
+```
+
+Make it clear and visual. Use emojis and formatting."""
+
+
+class ConversationState:
+    """Stores conversation state for a user"""
+    
+    def __init__(self, user_id: str):
+        self.user_id = user_id
+        self.messages: List[Dict] = []
+        self.requirements: Dict = {}
+        self.created_at = datetime.now()
+        self.ready_to_create = False
+        self.study_created = False
+        self.final_config: Optional[Dict] = None
+    
+    def add_message(self, role: str, content: str):
+        """Add message to conversation history"""
+        self.messages.append({
+            "role": role,
+            "content": content,
+            "timestamp": datetime.now().isoformat()
+        })
+    
+    def extract_requirements(self) -> Dict:
+        """Extract structured requirements from conversation history"""
+        # This could be enhanced with NLP
+        # For now, return what we've gathered
+        return self.requirements
+    
+    def to_dict(self) -> Dict:
+        """Convert state to dictionary"""
+        return {
+            "user_id": self.user_id,
+            "messages": self.messages,
+            "requirements": self.requirements,
+            "ready_to_create": self.ready_to_create,
+            "study_created": self.study_created,
+            "created_at": self.created_at.isoformat()
+        }
+
+
+class ConversationManager:
+    """Manages conversational study creation"""
+    
+    def __init__(self):
+        """Initialize conversation manager"""
+        self.client = anthropic.Anthropic(
+            api_key=os.environ.get("ANTHROPIC_API_KEY")
+        )
+        
+        # Store active conversations (in production, use database)
+        self.conversations: Dict[str, ConversationState] = {}
+        
+        # Initialize orchestrator
+        self.orchestrator = LangGraphOrchestrator()
+    
+    def start_conversation(self, user_id: str) -> Dict:
+        """Start a new conversation"""
+        if user_id in self.conversations:
+            # Continue existing conversation
+            state = self.conversations[user_id]
+        else:
+            # Create new conversation
+            state = ConversationState(user_id)
+            self.conversations[user_id] = state
+            
+            # Add system greeting
+            greeting = (
+                "Hi! I'm your AI research assistant. I'll help you design your study "
+                "through a simple conversation. \n\n"
+                "To get started, could you tell me what you're trying to achieve? "
+                "What do you want to study or track?"
+            )
+            state.add_message("assistant", greeting)
+        
+        return {
+            "message": state.messages[-1]["content"],
+            "conversation_id": user_id,
+            "ready_to_create": state.ready_to_create
+        }
+    
+    def send_message(self, user_id: str, message: str) -> Dict:
+        """
+        Send a message in the conversation
+        
+        Args:
+            user_id: User identifier
+            message: User's message
+            
+        Returns:
+            Dict with assistant response and conversation state
+        """
+        # Get or create conversation state
+        if user_id not in self.conversations:
+            self.start_conversation(user_id)
+        
+        state = self.conversations[user_id]
+        
+        # Add user message to history
+        state.add_message("user", message)
+        
+        # Build conversation history for Claude
+        conversation_history = []
+        for msg in state.messages:
+            conversation_history.append({
+                "role": msg["role"],
+                "content": msg["content"]
+            })
+        
+        # Get response from Claude
+        response = self.client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=2000,
+            system=SYSTEM_PROMPT,
+            messages=conversation_history
+        )
+        
+        assistant_message = response.content[0].text
+        
+        # Check if ready to create study
+        if "[READY_TO_CREATE]" in assistant_message:
+            state.ready_to_create = True
+            
+            # Remove the marker from display
+            assistant_message = assistant_message.replace("[READY_TO_CREATE]", "").strip()
+            
+            # Extract study description from conversation
+            description = self._extract_description(state)
+            
+            # Generate schedule preview before creating study
+            try:
+                schedule_preview = self.generate_schedule_preview(description)
+                # Already included in assistant_message by Claude
+            except Exception as e:
+                print(f"Warning: Could not generate schedule preview: {e}")
+            
+            # Create the study using orchestrator
+            try:
+                result = self.orchestrator.create_study(description, user_id)
+                
+                state.study_created = True
+                state.final_config = result
+                
+                assistant_message += (
+                    f"\n\n✅ **Study Created Successfully!**\n\n"
+                    f"📊 **Summary:**\n"
+                    f"- Study Type: {result['study_type']}\n"
+                    f"- Agents Used: {len(result['agents_used'])}\n"
+                    f"- Forms Generated: {len(result['forms'])}\n\n"
+                    f"I've generated your forms and schedule."
+                )
+                
+            except Exception as e:
+                assistant_message += f"\n\n❌ Error creating study: {str(e)}"
+        
+        # Add assistant message to state
+        state.add_message("assistant", assistant_message)
+        
+        # Return response
+        return {
+            "message": assistant_message,
+            "ready_to_create": state.ready_to_create,
+            "study_created": state.study_created,
+            "config": state.final_config if state.study_created else None,
+            "conversation_id": user_id
+        }
+    
+    def _extract_description(self, state: ConversationState) -> str:
+        """Extract study description from conversation history"""
+        # Combine user messages into description
+        user_messages = [
+            msg["content"] for msg in state.messages 
+            if msg["role"] == "user"
+        ]
+        return " ".join(user_messages)
+    
+    def generate_schedule_preview(self, requirements: str) -> str:
+        """
+        Generate text-based schedule preview
+        
+        Args:
+            requirements: Study requirements as text
+            
+        Returns:
+            Formatted schedule preview
+        """
+        response = self.client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1500,
+            messages=[{
+                "role": "user",
+                "content": SCHEDULE_PREVIEW_PROMPT.format(requirements=requirements)
+            }]
+        )
+        
+        return response.content[0].text
+    
+    def get_conversation(self, user_id: str) -> Optional[Dict]:
+        """Get conversation state"""
+        if user_id in self.conversations:
+            return self.conversations[user_id].to_dict()
+        return None
+    
+    def clear_conversation(self, user_id: str) -> bool:
+        """Clear conversation state"""
+        if user_id in self.conversations:
+            del self.conversations[user_id]
+            return True
+        return False
+
+
+# Test function
+def test_conversation():
+    """Test conversational interface"""
+    manager = ConversationManager()
+    
+    print("🎬 Starting Conversational Study Creation Test\n")
+    print("="*60)
+    
+    # Start conversation
+    user_id = "test_user_001"
+    response = manager.start_conversation(user_id)
+    print(f"🤖 Assistant: {response['message']}\n")
+    
+    # Simulate conversation
+    test_messages = [
+        "I want to create a clinical trial for a new diabetes medication",
+        "We'll have screening, baseline, treatment (8 weeks), and follow-up phases",
+        "We need a daily diary, weekly quality of life survey, and monthly blood work",
+        "Yes, that sounds right. Let's create it!"
+    ]
+    
+    for user_msg in test_messages:
+        print(f"👤 User: {user_msg}")
+        response = manager.send_message(user_id, user_msg)
+        print(f"🤖 Assistant: {response['message']}\n")
+        
+        if response.get('study_created'):
+            print("\n✅ Study Created!")
+            print(f"Study Type: {response['config']['study_type']}")
+            print(f"Agents Used: {len(response['config']['agents_used'])}")
+            print(f"Forms Generated: {len(response['config']['forms'])}")
+            break
+        
+        input("👉 Press Enter to continue...")
+    
+    print("\n" + "="*60)
+    print("🎉 Test Complete!")
+
+
+if __name__ == "__main__":
+    test_conversation()

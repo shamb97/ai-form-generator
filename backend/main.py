@@ -12,6 +12,7 @@ Features:
 - Multi-role authentication system
 - Event Trigger System (Day 2 - NEW!)
 - Schedule Optimizer AI Agent (Day 2 - ENHANCED!)
+- CONVERSATIONAL AI (Day 4 - NEW!)
 
 Next Steps:
 - Informed consent system
@@ -53,7 +54,7 @@ from .database import (
 
 # Authentication
 from .auth_database import init_db as init_auth_db
-from .auth_api import router as auth_router
+from .auth_api import router as auth_router, get_current_user
 from .designer_api import router as designer_router
 
 # Local modules
@@ -98,6 +99,10 @@ from .agents.reflection_qa_agent import ReflectionQAAgent
 # Conditional Engine (NEW! - DAY 3)
 from .conditional_engine import ConditionalEngine, ConditionalRule, ConditionType
 
+# Conversational AI (NEW! - DAY 4)
+from .conversation_manager import ConversationManager
+from .langgraph_orchestrator import LangGraphOrchestrator
+
 
 # ============================================================================
 # APP INITIALIZATION
@@ -105,13 +110,16 @@ from .conditional_engine import ConditionalEngine, ConditionalRule, ConditionTyp
 
 app = FastAPI(
     title="AI Form Generator API",
-    description="AI-powered clinical research form generation and scheduling with multi-role authentication and event system",
-    version="2.1.0"
+    description="AI-powered clinical research form generation and scheduling with multi-role authentication, event system, and conversational AI",
+    version="2.2.0"
 )
 
 # Initialize Anthropic client
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 consent_manager = ConsentManager()
+
+# Initialize conversation manager (NEW! - DAY 4)
+conversation_manager = ConversationManager()
 
 # AI Agents (initialized on startup)
 form_designer = None
@@ -137,8 +145,10 @@ async def startup_event():
     global form_designer, schedule_optimizer, policy_recommender, compliance_checker, qa_reviewer, event_handler, conditional_engine
     
     # Initialize databases
+    print("✅ Database initialized successfully")
     init_db()  # Research forms database
     init_auth_db()  # Authentication database
+    print("✅ Database initialized")
     
     # Initialize AI Agents
     print("🤖 Initializing AI Agents...")
@@ -456,8 +466,8 @@ def root():
     """Root endpoint - API information."""
     return {
         "status": "ok",
-        "message": "AI Form Generator API - Running with AI Agents, Authentication & Event System",
-        "version": "2.1.0",
+        "message": "AI Form Generator API - Running with AI Agents, Authentication, Event System & Conversational AI",
+        "version": "2.2.0",
         "endpoints": {
             "health": "/health",
             "docs": "/docs",
@@ -468,6 +478,7 @@ def root():
             "ai_policy_recommend": "/api/v1/ai/recommend-policies",
             "ai_compliance_check": "/api/v1/ai/check-compliance",
             "ai_quality_review": "/api/v1/ai/review-quality",
+            "conversation_ai": "/api/v1/conversation/*",
             "schedule_generation": "/api/v1/schedule/generate",
             "event_trigger": "/api/v1/events/trigger",
             "event_status": "/api/v1/events/status/{study_id}",
@@ -485,7 +496,8 @@ def root():
         },
         "new_features": {
             "event_system": "Trigger events that override regular schedules (baseline, EOT, early termination)",
-            "priority_resolution": "Events always win over regular schedules - bulletproof clash prevention"
+            "priority_resolution": "Events always win over regular schedules - bulletproof clash prevention",
+            "conversational_ai": "Natural language study creation with multi-turn dialogue (DAY 4)"
         }
     }
 
@@ -509,6 +521,7 @@ def health():
         "auth_enabled": True,
         "ai_agents_initialized": agents_initialized,
         "event_handler_initialized": event_handler is not None,
+        "conversation_manager_initialized": conversation_manager is not None,
         "ai_agents": {
             "form_designer": form_designer is not None,
             "schedule_optimizer": schedule_optimizer is not None,
@@ -519,6 +532,10 @@ def health():
         "event_system": {
             "handler_ready": event_handler is not None,
             "registered_day_types": len(event_handler.day_types) if event_handler else 0
+        },
+        "conversational_ai": {
+            "manager_ready": conversation_manager is not None,
+            "active_conversations": len(conversation_manager.conversations) if conversation_manager else 0
         },
         "python_version": f"{os.sys.version_info.major}.{os.sys.version_info.minor}"
     }
@@ -980,6 +997,134 @@ async def ai_review_quality(request: AIQARequest):
             success=False,
             error=str(e)
         )
+
+
+# ============================================================================
+# CONVERSATIONAL AI ENDPOINTS (NEW! - DAY 4)
+# ============================================================================
+
+@app.post("/api/v1/conversation/start")
+async def start_conversation(
+    current_user: dict = Depends(get_current_user)
+):
+    """Start a new conversational study creation session"""
+    try:
+        user_id = str(current_user.user_id)
+        result = conversation_manager.start_conversation(user_id)
+        
+        return {
+            "status": "success",
+            "data": result
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/conversation/message")
+async def send_conversation_message(
+    message: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Send a message in the conversation"""
+    try:
+        msg = message.get("message", "")
+        
+        if not msg:
+            raise HTTPException(status_code=400, detail="Message is required")
+        
+        user_id = str(current_user.user_id)
+        result = conversation_manager.send_message(user_id, msg)
+        
+        return {
+            "status": "success",
+            "data": result
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/conversation/get/{user_id}")
+async def get_conversation(
+    user_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get conversation history for a user"""
+    try:
+        # Verify user can only access their own conversation
+        if str(current_user.user_id) != user_id:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        result = conversation_manager.get_conversation(user_id)
+        
+        if result is None:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        
+        return {
+            "status": "success",
+            "data": result
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/v1/conversation/clear/{user_id}")
+async def clear_conversation(
+    user_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Clear conversation history for a user"""
+    try:
+        # Verify user can only clear their own conversation
+        if str(current_user.user_id) != user_id:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        success = conversation_manager.clear_conversation(user_id)
+        
+        if not success:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        
+        return {
+            "status": "success",
+            "message": "Conversation cleared"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/conversation/create-study")
+async def create_study_from_conversation(
+    description: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Manually trigger study creation from conversation
+    (Usually happens automatically, but this endpoint allows manual triggering)
+    """
+    try:
+        desc = description.get("description", "")
+        
+        if not desc:
+            raise HTTPException(status_code=400, detail="Description is required")
+        
+        user_id = str(current_user.user_id)
+        orchestrator = LangGraphOrchestrator()
+        result = orchestrator.create_study(desc, user_id)
+        
+        return {
+            "status": "success",
+            "data": result
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ============================================================================
@@ -1494,9 +1639,6 @@ async def get_conditional_status(subject_id: int, study_id: Optional[int] = None
         )
 
 
-
-
-
 class MarkCompleteRequest(BaseModel):
     """Request to mark a form as complete."""
     study_id: int
@@ -1559,8 +1701,6 @@ async def mark_form_complete(request: MarkCompleteRequest):
             message="Failed to mark form complete",
             error=str(e)
         )
-
-
 
 
 class AddRuleRequest(BaseModel):
@@ -2260,6 +2400,7 @@ if __name__ == "__main__":
     print("🔐 Auth endpoints: http://localhost:8000/api/v1/auth/*")
     print("🤖 AI Agent endpoints: http://localhost:8000/api/v1/ai/*")
     print("⚡ Event System endpoints: http://localhost:8000/api/v1/events/*")
+    print("💬 Conversation endpoints: http://localhost:8000/api/v1/conversation/*")
     print("=" * 60)
     print("🤖 AI Agents Available:")
     print("   1. Form Designer - Natural language → JSON forms")
@@ -2273,5 +2414,11 @@ if __name__ == "__main__":
     print("   • Priority resolution (events override regular schedule)")
     print("   • Schedule recalculation on event trigger")
     print("   • Event status tracking per study")
+    print("=" * 60)
+    print("💬 Conversational AI:")
+    print("   • Natural language study creation")
+    print("   • Multi-turn dialogue with context retention")
+    print("   • Schedule preview before creation")
+    print("   • Integrated with LangGraph orchestrator")
     print("=" * 60)
     uvicorn.run(app, host="0.0.0.0", port=8000)

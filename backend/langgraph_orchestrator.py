@@ -7,12 +7,12 @@ Uses intelligent routing based on study type classification
 from langgraph.graph import StateGraph, END
 from typing import TypedDict, List, Dict, Any, Annotated
 import operator
-from study_classifier import StudyClassifier
+from .study_classifier import StudyClassifier
 import sys
 import os
 
 # Import agents using absolute imports
-from agent_adapter import (
+from .agent_adapter import (
     AdaptedFormDesigner,
     AdaptedScheduleOptimizer,
     AdaptedPolicyRecommender,
