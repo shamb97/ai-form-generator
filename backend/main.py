@@ -95,6 +95,9 @@ from .agents.policy_recommender_agent import PolicyRecommenderAgent
 from .agents.clinical_compliance_agent import ClinicalComplianceAgent
 from .agents.reflection_qa_agent import ReflectionQAAgent
 
+# Conditional Engine (NEW! - DAY 3)
+from .conditional_engine import ConditionalEngine, ConditionalRule, ConditionType
+
 
 # ============================================================================
 # APP INITIALIZATION
@@ -120,6 +123,9 @@ qa_reviewer = None
 # Event Handler (initialized on startup) - NEW!
 event_handler = None
 
+# Conditional Engine (initialized on startup) - NEW!
+conditional_engine = None
+
 # In-memory storage for events (in production, use database)
 # This is a simple implementation for Day 2 - will be enhanced with database on Day 5
 events_store = {}  # {study_id: {subject_id: [events]}}
@@ -128,7 +134,7 @@ events_store = {}  # {study_id: {subject_id: [events]}}
 @app.on_event("startup")
 async def startup_event():
     """Initialize databases, AI agents, and event handler on startup."""
-    global form_designer, schedule_optimizer, policy_recommender, compliance_checker, qa_reviewer, event_handler
+    global form_designer, schedule_optimizer, policy_recommender, compliance_checker, qa_reviewer, event_handler, conditional_engine
     
     # Initialize databases
     init_db()  # Research forms database
@@ -147,6 +153,11 @@ async def startup_event():
     print("⚡ Initializing Event Handler...")
     event_handler = create_default_event_handler()
     print("✅ Event handler initialized with default day types!")
+    
+    # Initialize Conditional Engine (NEW! - DAY 3)
+    print("🔗 Initializing Conditional Engine...")
+    conditional_engine = ConditionalEngine()
+    print("✅ Conditional engine initialized!")
     
     print("🚀 Server started - All systems ready!")
 
@@ -949,17 +960,18 @@ async def ai_review_quality(request: AIQARequest):
         print(f"🔍 Reflection QA Agent: Reviewing {request.review_type}")
         
         # Use the agent to review quality
-        result = qa_reviewer.review_quality(
-            request.content,
-            request.review_type
+        result = qa_reviewer.review_output(
+            agent_name=f"{request.review_type.title()} Content",
+            output=request.content,
+            context=f"Reviewing {request.review_type} for quality assurance"
         )
         
         print(f"✅ Quality review complete")
         
         return AIQAResponse(
             success=True,
-            quality_score=result.get('score'),
-            feedback=result.get('feedback')
+            quality_score=result.get('quality_score'),
+            feedback=result
         )
         
     except Exception as e:
@@ -1247,6 +1259,393 @@ async def recalculate_schedule(request: ScheduleRecalculationRequest):
             affected_days=[],
             new_schedule={},
             changes_summary="Failed to recalculate schedule",
+            error=str(e)
+        )
+
+
+# ============================================================================
+# CONDITIONAL DEPENDENCIES ENDPOINTS (NEW! - DAY 3)
+# ============================================================================
+
+class ConditionalCheckRequest(BaseModel):
+    """Request to check if a condition is met."""
+    study_id: int
+    subject_id: int
+    condition_type: str = Field(description="Type: form_completed, phase_reached, event_triggered")
+    condition_value: str = Field(description="Value to check (form_id, phase_name, event_type)")
+
+
+class ConditionalCheckResponse(BaseModel):
+    """Response from condition check."""
+    success: bool
+    condition_met: bool
+    message: str
+    error: Optional[str] = None
+
+
+class ConditionalActivateRequest(BaseModel):
+    """Request to activate forms."""
+    study_id: int
+    subject_id: int
+    form_ids: List[str] = Field(description="Forms to activate")
+    reason: Optional[str] = None
+
+
+class ConditionalActivateResponse(BaseModel):
+    """Response from form activation."""
+    success: bool
+    activated_count: int
+    activated_forms: List[str]
+    message: str
+    error: Optional[str] = None
+
+
+class ConditionalStatusResponse(BaseModel):
+    """Response with subject's activation status."""
+    success: bool
+    subject_id: int
+    active_forms: List[str]
+    completed_forms: List[str]
+    current_phase: str
+    triggered_events: List[str]
+    error: Optional[str] = None
+
+
+@app.post("/api/v1/conditional/check", response_model=ConditionalCheckResponse)
+async def check_condition(request: ConditionalCheckRequest):
+    """
+    Check if a condition is met for a subject.
+    
+    Condition Types:
+    - form_completed: Check if a form is complete
+    - phase_reached: Check if subject is in a phase
+    - event_triggered: Check if an event occurred
+    
+    Example:
+        POST /api/v1/conditional/check
+        {
+            "study_id": 1,
+            "subject_id": 101,
+            "condition_type": "form_completed",
+            "condition_value": "baseline_assessment"
+        }
+    """
+    if not conditional_engine:
+        return ConditionalCheckResponse(
+            success=False,
+            condition_met=False,
+            message="Conditional engine not initialized",
+            error="Conditional engine not initialized"
+        )
+    
+    try:
+        print(f"🔍 Checking condition: {request.condition_type} = {request.condition_value}")
+        
+        # Map string to enum
+        condition_type_map = {
+            "form_completed": ConditionType.FORM_COMPLETED,
+            "phase_reached": ConditionType.PHASE_REACHED,
+            "event_triggered": ConditionType.EVENT_TRIGGERED
+        }
+        
+        condition_type = condition_type_map.get(request.condition_type.lower())
+        if not condition_type:
+            return ConditionalCheckResponse(
+                success=False,
+                condition_met=False,
+                message=f"Unknown condition type: {request.condition_type}",
+                error=f"Unknown condition type: {request.condition_type}"
+            )
+        
+        # Check the condition
+        is_met = conditional_engine.check_condition(
+            request.subject_id,
+            condition_type,
+            request.condition_value
+        )
+        
+        message = f"Condition {'MET' if is_met else 'NOT MET'}: {request.condition_type} = {request.condition_value}"
+        print(f"✅ {message}")
+        
+        return ConditionalCheckResponse(
+            success=True,
+            condition_met=is_met,
+            message=message
+        )
+        
+    except Exception as e:
+        print(f"❌ Condition Check Error: {e}")
+        return ConditionalCheckResponse(
+            success=False,
+            condition_met=False,
+            message="Failed to check condition",
+            error=str(e)
+        )
+
+
+@app.post("/api/v1/conditional/activate", response_model=ConditionalActivateResponse)
+async def activate_forms(request: ConditionalActivateRequest):
+    """
+    Activate forms for a subject.
+    
+    This is typically called automatically when conditions are met,
+    but can also be called manually.
+    
+    Example:
+        POST /api/v1/conditional/activate
+        {
+            "study_id": 1,
+            "subject_id": 101,
+            "form_ids": ["treatment_form_1", "treatment_form_2"],
+            "reason": "Baseline completed"
+        }
+    """
+    if not conditional_engine:
+        return ConditionalActivateResponse(
+            success=False,
+            activated_count=0,
+            activated_forms=[],
+            message="Conditional engine not initialized",
+            error="Conditional engine not initialized"
+        )
+    
+    try:
+        print(f"🔓 Activating {len(request.form_ids)} forms for subject {request.subject_id}")
+        
+        # Activate the forms
+        conditional_engine.activate_forms(request.subject_id, request.form_ids)
+        
+        message = f"Activated {len(request.form_ids)} forms for subject {request.subject_id}"
+        if request.reason:
+            message += f" (Reason: {request.reason})"
+        
+        print(f"✅ {message}")
+        
+        return ConditionalActivateResponse(
+            success=True,
+            activated_count=len(request.form_ids),
+            activated_forms=request.form_ids,
+            message=message
+        )
+        
+    except Exception as e:
+        print(f"❌ Form Activation Error: {e}")
+        return ConditionalActivateResponse(
+            success=False,
+            activated_count=0,
+            activated_forms=[],
+            message="Failed to activate forms",
+            error=str(e)
+        )
+
+
+@app.get("/api/v1/conditional/status/{subject_id}", response_model=ConditionalStatusResponse)
+async def get_conditional_status(subject_id: int, study_id: Optional[int] = None):
+    """
+    Get complete conditional status for a subject.
+    
+    Returns:
+    - Active forms
+    - Completed forms
+    - Current phase
+    - Triggered events
+    
+    Example:
+        GET /api/v1/conditional/status/101?study_id=1
+    """
+    if not conditional_engine:
+        return ConditionalStatusResponse(
+            success=False,
+            subject_id=subject_id,
+            active_forms=[],
+            completed_forms=[],
+            current_phase="Unknown",
+            triggered_events=[],
+            error="Conditional engine not initialized"
+        )
+    
+    try:
+        print(f"📊 Getting conditional status for subject {subject_id}")
+        
+        # Get status summary
+        status = conditional_engine.get_status_summary(subject_id)
+        
+        print(f"✅ Status retrieved: {status['total_active']} active, {status['total_complete']} complete")
+        
+        return ConditionalStatusResponse(
+            success=True,
+            subject_id=subject_id,
+            active_forms=status['active_forms'],
+            completed_forms=status['completed_forms'],
+            current_phase=status['current_phase'],
+            triggered_events=status['triggered_events']
+        )
+        
+    except Exception as e:
+        print(f"❌ Status Retrieval Error: {e}")
+        return ConditionalStatusResponse(
+            success=False,
+            subject_id=subject_id,
+            active_forms=[],
+            completed_forms=[],
+            current_phase="Unknown",
+            triggered_events=[],
+            error=str(e)
+        )
+
+
+
+
+
+class MarkCompleteRequest(BaseModel):
+    """Request to mark a form as complete."""
+    study_id: int
+    subject_id: int
+    form_id: str
+
+
+class MarkCompleteResponse(BaseModel):
+    """Response from marking form complete."""
+    success: bool
+    message: str
+    triggered_activations: List[str] = []
+    error: Optional[str] = None
+
+
+@app.post("/api/v1/conditional/mark-complete", response_model=MarkCompleteResponse)
+async def mark_form_complete(request: MarkCompleteRequest):
+    """
+    Mark a form as complete for a subject.
+    
+    This triggers any conditional rules that depend on this form.
+    
+    Example:
+        POST /api/v1/conditional/mark-complete
+        {
+            "study_id": 1,
+            "subject_id": 101,
+            "form_id": "baseline_assessment"
+        }
+    """
+    if not conditional_engine:
+        return MarkCompleteResponse(
+            success=False,
+            message="Conditional engine not initialized",
+            error="Conditional engine not initialized"
+        )
+    
+    try:
+        print(f"✅ Marking form '{request.form_id}' complete for subject {request.subject_id}")
+        
+        # Mark the form complete (this will auto-trigger any rules)
+        conditional_engine.mark_form_complete(request.subject_id, request.form_id)
+        
+        # Get newly activated forms
+        active_forms = conditional_engine.get_active_forms(request.subject_id)
+        
+        message = f"Form '{request.form_id}' marked complete for subject {request.subject_id}"
+        print(f"✅ {message}")
+        
+        return MarkCompleteResponse(
+            success=True,
+            message=message,
+            triggered_activations=active_forms
+        )
+        
+    except Exception as e:
+        print(f"❌ Mark Complete Error: {e}")
+        return MarkCompleteResponse(
+            success=False,
+            message="Failed to mark form complete",
+            error=str(e)
+        )
+
+
+
+
+class AddRuleRequest(BaseModel):
+    """Request to add a conditional rule."""
+    rule_id: str
+    condition_type: str
+    condition_value: str
+    target_forms: List[str]
+    description: Optional[str] = ""
+
+
+class AddRuleResponse(BaseModel):
+    """Response from adding rule."""
+    success: bool
+    rule_id: str
+    message: str
+    error: Optional[str] = None
+
+
+@app.post("/api/v1/conditional/add-rule", response_model=AddRuleResponse)
+async def add_conditional_rule(request: AddRuleRequest):
+    """
+    Add a conditional rule.
+    
+    Example:
+        POST /api/v1/conditional/add-rule
+        {
+            "rule_id": "baseline_to_treatment",
+            "condition_type": "form_completed",
+            "condition_value": "baseline_assessment",
+            "target_forms": ["treatment_form_1", "treatment_form_2"],
+            "description": "Activate treatment forms after baseline"
+        }
+    """
+    if not conditional_engine:
+        return AddRuleResponse(
+            success=False,
+            rule_id="",
+            message="Conditional engine not initialized",
+            error="Conditional engine not initialized"
+        )
+    
+    try:
+        # Map string to enum
+        condition_type_map = {
+            "form_completed": ConditionType.FORM_COMPLETED,
+            "phase_reached": ConditionType.PHASE_REACHED,
+            "event_triggered": ConditionType.EVENT_TRIGGERED
+        }
+        
+        condition_type = condition_type_map.get(request.condition_type.lower())
+        if not condition_type:
+            return AddRuleResponse(
+                success=False,
+                rule_id="",
+                message=f"Unknown condition type: {request.condition_type}",
+                error=f"Unknown condition type: {request.condition_type}"
+            )
+        
+        # Create and add rule
+        rule = ConditionalRule(
+            rule_id=request.rule_id,
+            condition_type=condition_type,
+            condition_value=request.condition_value,
+            target_forms=request.target_forms,
+            description=request.description
+        )
+        
+        conditional_engine.add_rule(rule)
+        
+        message = f"Rule '{request.rule_id}' added successfully"
+        print(f"✅ {message}")
+        
+        return AddRuleResponse(
+            success=True,
+            rule_id=request.rule_id,
+            message=message
+        )
+        
+    except Exception as e:
+        print(f"❌ Add Rule Error: {e}")
+        return AddRuleResponse(
+            success=False,
+            rule_id="",
+            message="Failed to add rule",
             error=str(e)
         )
 

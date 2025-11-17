@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skip Logic Test - Clean Version</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 8px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .test-status {
+            background: #e0e7ff;
+            border-left: 4px solid #667eea;
+            padding: 16px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+        
+        .test-status h3 {
+            color: #667eea;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .question {
+            background: #f8f9fa;
+            padding: 24px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .question-label {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 16px;
+            margin-bottom: 16px;
+            display: block;
+        }
+        
+        .required {
+            color: #dc3545;
+        }
+        
+        .conditional-tag {
+            display: inline-block;
+            background: #fbbf24;
+            color: #78350f;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 8px;
+            text-transform: uppercase;
+        }
+        
+        .slider-container {
+            padding: 16px 0;
+        }
+        
+        #painSlider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #e9ecef;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        #painSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        #painSlider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .value-box {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .value-number {
+            font-size: 48px;
+            font-weight: 700;
+            color: #667eea;
+            line-height: 1;
+        }
+        
+        .value-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+        
+        .range-markers {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 8px;
+        }
+        
+        .text-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+        
+        .text-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .text-input:disabled {
+            background: #f3f4f6;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .info-box {
+            background: #fef3c7;
+            border-left: 3px solid #f59e0b;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #92400e;
+        }
+        
+        .info-box strong {
+            color: #78350f;
+        }
+        
+        /* HIDE/SHOW CLASSES */
+        .hidden {
+            display: none !important;
+        }
+        
+        .visible {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* DEBUG PANEL */
+        .debug-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 400px;
+            max-height: 500px;
+            background: #1e293b;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+            z-index: 1000;
+        }
+        
+        .debug-header {
+            background: #334155;
+            padding: 12px 16px;
+            color: #f1f5f9;
+            font-weight: 700;
+            font-size: 13px;
+            border-bottom: 2px solid #475569;
+        }
+        
+        .debug-logs {
+            padding: 12px;
+            max-height: 440px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            padding: 6px 10px;
+            margin: 4px 0;
+            border-radius: 4px;
+            font-size: 11px;
+            line-height: 1.5;
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .log-info { color: #60a5fa; }
+        .log-success { color: #34d399; }
+        .log-warning { color: #fbbf24; }
+        .log-error { color: #f87171; }
+        
+        .log-time {
+            color: #94a3b8;
+            margin-right: 8px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 12px;
+        }
+        
+        .badge-visible {
+            background: #10b981;
+            color: white;
+        }
+        
+        .badge-hidden {
+            background: #ef4444;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Skip Logic Test</h1>
+        <p class="subtitle">Ultra-simple test with maximum debugging</p>
+        
+        <div class="test-status">
+            <h3>📋 What to expect:</h3>
+            <p><strong>When pain level is 0-4:</strong> Medication question is HIDDEN</p>
+            <p><strong>When pain level is 5-10:</strong> Medication question APPEARS</p>
+        </div>
+        
+        <!-- QUESTION 1: Pain Level (Always Visible) -->
+        <div class="question">
+            <label class="question-label">
+                1. What is your pain level?
+                <span class="required">*</span>
+                <span id="painStatus" class="status-badge badge-visible">ALWAYS VISIBLE</span>
+            </label>
+            
+            <div class="info-box">
+                ℹ️ <strong>This controls the next question.</strong> Move the slider to test!
+            </div>
+            
+            <div class="slider-container">
+                <input type="range" 
+                       id="painSlider" 
+                       min="0" 
+                       max="10" 
+                       value="0">
+            </div>
+            
+            <div class="value-box">
+                <div class="value-number" id="painValue">0</div>
+                <div class="value-label">out of 10</div>
+            </div>
+            
+            <div class="range-markers">
+                <span>0 - No pain</span>
+                <span>10 - Worst pain</span>
+            </div>
+        </div>
+        
+        <!-- QUESTION 2: Medication (Conditional - Hidden Initially) -->
+        <div class="question hidden" id="medicationQuestion">
+            <label class="question-label">
+                2. What medication did you take?
+                <span class="conditional-tag">Conditional</span>
+                <span id="medStatus" class="status-badge badge-hidden">HIDDEN</span>
+            </label>
+            
+            <div class="info-box">
+                🔒 <strong>Conditional field:</strong> This appears when pain level is 5 or higher
+            </div>
+            
+            <input type="text" 
+                   id="medicationInput"
+                   class="text-input" 
+                   placeholder="e.g., Ibuprofen, Aspirin"
+                   disabled>
+        </div>
+        
+        <!-- QUESTION 3: Notes (Always Visible) -->
+        <div class="question">
+            <label class="question-label">
+                3. Any additional notes? (optional)
+                <span class="status-badge badge-visible">ALWAYS VISIBLE</span>
+            </label>
+            
+            <input type="text" 
+                   id="notesInput"
+                   class="text-input" 
+                   placeholder="Type any additional information...">
+        </div>
+    </div>
+    
+    <!-- DEBUG PANEL -->
+    <div class="debug-panel">
+        <div class="debug-header">🐛 DEBUG CONSOLE</div>
+        <div class="debug-logs" id="debugLogs"></div>
+    </div>
+    
+    <script>
+        // ============================================
+        // SIMPLE SKIP LOGIC TEST
+        // ============================================
+        
+        console.log('🎬 Skip Logic Test Starting...');
+        
+        // Get elements by ID (simplest, most reliable)
+        const painSlider = document.getElementById('painSlider');
+        const painValue = document.getElementById('painValue');
+        const medicationQuestion = document.getElementById('medicationQuestion');
+        const medicationInput = document.getElementById('medicationInput');
+        const medStatus = document.getElementById('medStatus');
+        
+        // Debug logging
+        const debugLogs = document.getElementById('debugLogs');
+        let logCounter = 0;
+        
+        function log(message, type = 'info') {
+            logCounter++;
+            const time = new Date().toLocaleTimeString();
+            
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.innerHTML = `<span class="log-time">${time}</span> [${logCounter}] ${message}`;
+            
+            debugLogs.insertBefore(entry, debugLogs.firstChild);
+            
+            // Keep only last 50 logs
+            while (debugLogs.children.length > 50) {
+                debugLogs.removeChild(debugLogs.lastChild);
+            }
+            
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        // Verify elements exist
+        log('Checking if elements exist...', 'info');
+        log(`Pain slider: ${painSlider ? '✅ Found' : '❌ NOT FOUND'}`, painSlider ? 'success' : 'error');
+        log(`Pain display: ${painValue ? '✅ Found' : '❌ NOT FOUND'}`, painValue ? 'success' : 'error');
+        log(`Med question: ${medicationQuestion ? '✅ Found' : '❌ NOT FOUND'}`, medicationQuestion ? 'success' : 'error');
+        log(`Med input: ${medicationInput ? '✅ Found' : '❌ NOT FOUND'}`, medicationInput ? 'success' : 'error');
+        
+        if (!painSlider || !medicationQuestion) {
+            log('❌ CRITICAL ERROR: Elements not found!', 'error');
+        } else {
+            log('✅ All elements found successfully', 'success');
+        }
+        
+        // The rule: show medication when pain >= 5
+        const THRESHOLD = 5;
+        log(`📋 Rule: Show medication when pain >= ${THRESHOLD}`, 'info');
+        
+        // Function to evaluate and update
+        function updateForm() {
+            // Get current value
+            const currentValue = parseInt(painSlider.value);
+            
+            log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info');
+            log(`📊 Pain slider moved to: ${currentValue}`, 'info');
+            
+            // Update the display number
+            painValue.textContent = currentValue;
+            
+            // Check condition
+            const shouldShowMed = currentValue >= THRESHOLD;
+            log(`🧮 Is ${currentValue} >= ${THRESHOLD}? ${shouldShowMed}`, shouldShowMed ? 'success' : 'warning');
+            
+            // Check current state
+            const isCurrentlyHidden = medicationQuestion.classList.contains('hidden');
+            log(`📌 Medication currently hidden: ${isCurrentlyHidden}`, 'info');
+            
+            // Update visibility
+            if (shouldShowMed && isCurrentlyHidden) {
+                // SHOW IT
+                log('🎬 ACTION: Showing medication question', 'success');
+                medicationQuestion.classList.remove('hidden');
+                medicationQuestion.classList.add('visible');
+                medicationInput.disabled = false;
+                
+                // Update badge
+                medStatus.textContent = 'VISIBLE';
+                medStatus.className = 'status-badge badge-visible';
+                
+                log('✅ MEDICATION QUESTION IS NOW VISIBLE', 'success');
+                
+            } else if (!shouldShowMed && !isCurrentlyHidden) {
+                // HIDE IT
+                log('🎬 ACTION: Hiding medication question', 'warning');
+                medicationQuestion.classList.remove('visible');
+                medicationQuestion.classList.add('hidden');
+                medicationInput.disabled = true;
+                medicationInput.value = '';
+                
+                // Update badge
+                medStatus.textContent = 'HIDDEN';
+                medStatus.className = 'status-badge badge-hidden';
+                
+                log('🔒 MEDICATION QUESTION IS NOW HIDDEN', 'warning');
+                
+            } else {
+                log('⏸️ No change needed', 'info');
+            }
+        }
+        
+        // Listen to slider changes
+        painSlider.addEventListener('input', function(e) {
+            log(`🎚️ Slider input event fired (value: ${e.target.value})`, 'info');
+            updateForm();
+        });
+        
+        // Initial evaluation on page load
+        log('🎬 Running initial evaluation...', 'info');
+        updateForm();
+        
+        log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'success');
+        log('✅ Test is ready! Move the slider.', 'success');
+        log(`Expected: <${THRESHOLD} = hidden, >=${THRESHOLD} = visible`, 'success');
+    </script>
+</body>
+</html>

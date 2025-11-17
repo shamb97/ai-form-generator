@@ -7,6 +7,11 @@ This agent converts natural language descriptions into JSON form schemas!
 Example:
   Input: "I need a daily mood tracker with happiness scale and sleep quality"
   Output: Complete JSON form with proper field types, validation, etc.
+
+NOW WITH EDGE CASE HANDLING:
+  - Detects ambiguous phase descriptions
+  - Asks clarifying questions when needed
+  - Handles time-based requirements intelligently
 """
 
 from typing import Dict, Any
@@ -19,9 +24,11 @@ if __name__ == "__main__":
     # Running as script - add parent directory to path
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from agents.base_agent import BaseAgent
+    from agents.metadata_validator import MetadataEdgeCaseHandler
 else:
     # Running as module - use relative import
     from .base_agent import BaseAgent
+    from .metadata_validator import MetadataEdgeCaseHandler
 
 
 class FormDesignerAgent(BaseAgent):
@@ -29,6 +36,7 @@ class FormDesignerAgent(BaseAgent):
     Specialized agent for designing clinical research forms
     
     Converts researcher descriptions into structured JSON forms
+    WITH intelligent edge case handling!
     """
     
     def __init__(self):
@@ -121,16 +129,22 @@ IMPORTANT: Output ONLY the JSON, nothing else! No markdown code blocks, no ```js
             role="Converts natural language to JSON form schemas",
             system_prompt=system_prompt
         )
+        
+        # Initialize the edge case validator
+        self.validator = MetadataEdgeCaseHandler()
+        print("✅ Form Designer Agent initialized with Edge Case Validator")
     
     def design_form(self, description: str) -> Dict[str, Any]:
         """
         Design a form from natural language description
         
+        NOW WITH EDGE CASE VALIDATION!
+        
         Args:
             description: What the researcher wants (e.g., "daily mood tracker")
             
         Returns:
-            Dictionary containing the form schema
+            Dictionary containing the form schema + any clarification questions
         """
         print(f"\n🎨 Designing form from: '{description}'...")
         
@@ -152,10 +166,50 @@ IMPORTANT: Output ONLY the JSON, nothing else! No markdown code blocks, no ```js
                 response_clean = "\n".join(lines).strip()
             
             # Parse the JSON response
-            form_schema = json.loads(response_clean)
-            print(f"✅ Form created: {form_schema.get('form_name', 'Unknown')}")
-            print(f"   Fields: {len(form_schema.get('fields', []))}")
-            return form_schema
+            form_data = json.loads(response_clean)
+            
+            # NEW: Validate and enhance with edge case handler
+            if "study_classification" in form_data:
+                print("🔍 Running edge case validation...")
+                
+                enhanced_classification = self.validator.validate_and_enhance_metadata(
+                    form_data["study_classification"],
+                    description
+                )
+                
+                # Update the classification with enhanced version
+                form_data["study_classification"] = enhanced_classification
+                
+                # Check for time-sensitive requirements
+                time_requirements = self.validator.detect_time_sensitive_requirements(description)
+                if time_requirements.get("has_time_requirements"):
+                    print(f"⏰ Detected time requirements: {time_requirements['requirements']}")
+                    form_data["time_requirements"] = time_requirements
+            
+            # Get form name for logging
+            form_name = "Unknown"
+            if "form_schema" in form_data:
+                form_name = form_data["form_schema"].get("form_name", "Unknown")
+            elif "form_name" in form_data:
+                form_name = form_data.get("form_name", "Unknown")
+            
+            print(f"✅ Form created: {form_name}")
+            
+            # Count fields
+            field_count = 0
+            if "form_schema" in form_data and "fields" in form_data["form_schema"]:
+                field_count = len(form_data["form_schema"]["fields"])
+            elif "fields" in form_data:
+                field_count = len(form_data["fields"])
+            
+            print(f"   Fields: {field_count}")
+            
+            # Check if clarification is needed
+            if enhanced_classification.get("needs_clarification"):
+                print("❓ Clarification needed from user")
+            
+            return form_data
+            
         except json.JSONDecodeError as e:
             print(f"❌ Error parsing JSON: {e}")
             print(f"Response was: {response[:200]}...")
@@ -223,28 +277,51 @@ Output the complete updated JSON form. No markdown code blocks!"""
 # Test the agent if run directly
 if __name__ == "__main__":
     print("\n" + "="*60)
-    print("🧪 TESTING FORM DESIGNER AGENT")
+    print("🧪 TESTING FORM DESIGNER AGENT WITH EDGE CASE VALIDATION")
     print("="*60)
     
     # Create the agent
     designer = FormDesignerAgent()
     
-    # Test 1: Simple form
+    # Test 1: Simple form (no edge cases)
     print("\n--- Test 1: Simple Daily Mood Tracker ---")
     mood_form = designer.design_form(
         "A simple daily mood tracker with happiness scale 1-10 and sleep quality"
     )
-    print("\nResult:")
-    print(json.dumps(mood_form, indent=2))
+    print("\nResult (classification):")
+    if "study_classification" in mood_form:
+        print(json.dumps(mood_form["study_classification"], indent=2))
     
-    # Test 2: Refine the form
-    print("\n--- Test 2: Add a field ---")
-    refined_form = designer.refine_form(
-        mood_form,
-        "Add a text field for notes about the day"
+    # Test 2: Ambiguous single phase
+    print("\n\n--- Test 2: Ambiguous Phase Detection ---")
+    phase_form = designer.design_form(
+        "30-day mindfulness tracker during my Awakening Phase"
     )
-    print("\nRefined Result:")
-    print(json.dumps(refined_form, indent=2))
+    print("\nResult (classification):")
+    if "study_classification" in phase_form:
+        classification = phase_form["study_classification"]
+        print(json.dumps(classification, indent=2))
+        if classification.get("needs_clarification"):
+            print("\n⚠️ NEEDS CLARIFICATION:")
+            print(f"Question: {classification.get('clarification_question')}")
+    
+    # Test 3: Multiple phases
+    print("\n\n--- Test 3: Multiple Phases ---")
+    trial_form = designer.design_form(
+        "Clinical trial with baseline, treatment, and follow-up phases"
+    )
+    print("\nResult (classification):")
+    if "study_classification" in trial_form:
+        print(json.dumps(trial_form["study_classification"], indent=2))
+    
+    # Test 4: Time requirements
+    print("\n\n--- Test 4: Time-Based Requirements ---")
+    time_form = designer.design_form(
+        "Daily check-in after 7pm for 25 days"
+    )
+    print("\nResult (time requirements):")
+    if "time_requirements" in time_form:
+        print(json.dumps(time_form["time_requirements"], indent=2))
     
     print("\n" + "="*60)
     print("✅ FORM DESIGNER AGENT TEST COMPLETE!")
