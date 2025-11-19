@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Study Designer - Conversational Interface</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .chat-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            height: 700px;
+        }
+        
+        .chat-header {
+            padding: 20px;
+            border-bottom: 2px solid #f0f0f0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px 12px 0 0;
+        }
+        
+        .chat-header h2 {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        
+        .chat-header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 12px;
+            animation: slideIn 0.3s;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        
+        .message.ai .message-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .message.user .message-avatar {
+            background: #e9ecef;
+        }
+        
+        .message-content {
+            flex: 1;
+        }
+        
+        .message-bubble {
+            padding: 15px;
+            border-radius: 12px;
+            max-width: 100%;
+        }
+        
+        .message.ai .message-bubble {
+            background: white;
+            border: 2px solid #e9ecef;
+        }
+        
+        .message.user .message-bubble {
+            background: #667eea;
+            color: white;
+        }
+        
+        .message-time {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+        
+        .chat-input-container {
+            padding: 20px;
+            border-top: 2px solid #f0f0f0;
+            background: white;
+            border-radius: 0 0 12px 12px;
+        }
+        
+        .chat-input {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chat-input input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+        }
+        
+        .chat-input input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .chat-input button {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .chat-input button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        
+        .chat-input button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .preview-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 30px;
+            height: 700px;
+            overflow-y: auto;
+        }
+        
+        .preview-container h2 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .preview-empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .preview-empty-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .study-preview {
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .study-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+        
+        .study-header h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .study-header p {
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+        
+        .study-meta {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+        }
+        
+        .study-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .form-preview {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .form-preview h4 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-frequency {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .form-fields {
+            display: grid;
+            gap: 12px;
+        }
+        
+        .field-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .field-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .field-type {
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .field-required {
+            color: #dc3545;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .calendar-preview {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 25px;
+        }
+        
+        .calendar-preview h4 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .calendar-day {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+        
+        .calendar-day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .calendar-day-number {
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .calendar-forms {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .form-badge {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .success-banner {
+            background: #d4edda;
+            border: 2px solid #c3e6cb;
+            color: #155724;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            animation: slideDown 0.3s;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .success-banner.show {
+            display: block;
+        }
+        
+        .typing-indicator {
+            display: flex;
+            gap: 5px;
+            padding: 15px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #999;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1>🤖 AI-Powered Study Designer</h1>
+                    <p>Describe your study in natural language - AI will generate complete forms, schedules, and validation rules</p>
+                </div>
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <span id="userInfo" style="color: #666; font-size: 14px;"></span>
+                    <button onclick="logout()" style="padding: 8px 16px; background: white; border: 2px solid #667eea; color: #667eea; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Banner -->
+        <div class="success-banner" id="successBanner">
+            ✅ <strong>Study Created Successfully!</strong> 
+            <a href="investigator-dashboard.html" style="color: #155724; text-decoration: underline; font-weight: 600;">Go to Investigator Dashboard →</a>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Chat Interface -->
+            <div class="chat-container">
+                <div class="chat-header">
+                    <h2>💬 Conversation</h2>
+                    <p>Chat with AI to design your study</p>
+                </div>
+                
+                <div class="chat-messages" id="chatMessages">
+                    <!-- Messages will be inserted here -->
+                </div>
+                
+                <div class="chat-input-container">
+                    <div class="chat-input">
+                        <input 
+                            type="text" 
+                            id="userInput" 
+                            placeholder="Describe your study..."
+                            onkeypress="if(event.key==='Enter') sendMessage()"
+                        >
+                        <button onclick="sendMessage()" id="sendBtn">
+                            Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Panel -->
+            <div class="preview-container" id="previewContainer">
+                <h2>📋 Study Preview</h2>
+                <div class="preview-empty">
+                    <div class="preview-empty-icon">🎯</div>
+                    <p>Start chatting to generate your study</p>
+                    <p style="font-size: 14px; margin-top: 10px;">The AI will design forms, calculate schedules, and add validation rules automatically.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE = 'http://localhost:8000';
+        
+        // Global State
+        let conversationId = null;
+        let userId = 'designer_' + Date.now();
+        let studyData = null;
+        let isWaitingForAI = false;
+        let authToken = null;
+        let currentUser = null;
+        
+        // Check for existing auth token on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Check localStorage for token
+            authToken = localStorage.getItem('auth_token');
+            
+            if (!authToken) {
+                // Show login prompt
+                await promptLogin();
+            } else {
+                // Verify token is still valid
+                const valid = await verifyToken();
+                if (!valid) {
+                    await promptLogin();
+                } else {
+                    // Show user info
+                    const userInfo = document.getElementById('userInfo');
+                    if (userInfo && currentUser) {
+                        userInfo.textContent = `Logged in as: ${currentUser.username || currentUser.email || 'User'}`;
+                    }
+                    await startConversation();
+                }
+            }
+        });
+        
+        // Prompt user to login
+        async function promptLogin() {
+            const username = prompt('Please enter your username (e.g., designer):\n\n(For demo: username "designer", password "password")');
+            if (!username) {
+                alert('Login required to use AI Designer');
+                return;
+            }
+            
+            const password = prompt('Please enter your password:');
+            if (!password) {
+                alert('Login required to use AI Designer');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    alert('Login failed: ' + (error.detail || 'Invalid credentials'));
+                    await promptLogin(); // Try again
+                    return;
+                }
+                
+                const data = await response.json();
+                authToken = data.access_token;
+                currentUser = data.user;
+                
+                // Save to localStorage
+                localStorage.setItem('auth_token', authToken);
+                localStorage.setItem('current_user', JSON.stringify(currentUser));
+                
+                console.log('Logged in as:', currentUser);
+                
+                // Show user info
+                const userInfo = document.getElementById('userInfo');
+                if (userInfo && currentUser) {
+                    userInfo.textContent = `Logged in as: ${currentUser.username || currentUser.email || 'User'}`;
+                }
+                
+                // Start conversation
+                await startConversation();
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Login failed. Please try again.');
+                await promptLogin();
+            }
+        }
+        
+        // Verify token is still valid
+        async function verifyToken() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    currentUser = data;
+                    localStorage.setItem('current_user', JSON.stringify(currentUser));
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                return false;
+            }
+        }
+        
+        // Logout function
+        function logout() {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('current_user');
+            window.location.reload();
+        }
+        
+        // Start conversation
+        async function startConversation() {
+            try {
+                console.log('Starting conversation with auth...');
+                
+                const response = await fetch(`${API_BASE}/api/v1/conversation/start`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.status === 401 || response.status === 403) {
+                    // Token expired or invalid
+                    localStorage.removeItem('auth_token');
+                    await promptLogin();
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to start conversation: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Conversation started:', data);
+                
+                // Handle different response formats
+                if (data.data) {
+                    conversationId = data.data.conversation_id;
+                    if (data.data.greeting) {
+                        addMessage('ai', data.data.greeting);
+                    }
+                } else if (data.conversation_id) {
+                    conversationId = data.conversation_id;
+                    if (data.greeting) {
+                        addMessage('ai', data.greeting);
+                    }
+                }
+                
+                // If no greeting, show default
+                if (!conversationId) {
+                    addMessage('ai', '👋 Hi! I\'m your AI study designer assistant. Tell me about the study you want to create, and I\'ll help you design it step by step.');
+                }
+                
+            } catch (error) {
+                console.error('Error starting conversation:', error);
+                addMessage('ai', '⚠️ Error connecting to AI. Please refresh the page or contact support.');
+            }
+        }
+        
+        // Send message
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            
+            if (!message || isWaitingForAI) return;
+            
+            // Add user message to chat
+            addMessage('user', message);
+            input.value = '';
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            isWaitingForAI = true;
+            document.getElementById('sendBtn').disabled = true;
+            
+            try {
+                console.log('Sending message:', message);
+                
+                const response = await fetch(`${API_BASE}/api/v1/conversation/message`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        message: message
+                    })
+                });
+                
+                if (response.status === 401 || response.status === 403) {
+                    // Token expired
+                    removeTypingIndicator();
+                    localStorage.removeItem('auth_token');
+                    alert('Session expired. Please login again.');
+                    await promptLogin();
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to send message: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('=== AI RESPONSE RECEIVED ===');
+                console.log('Full response:', JSON.stringify(data, null, 2));
+                console.log('Response keys:', Object.keys(data));
+                console.log('===========================');
+                
+                // Remove typing indicator
+                removeTypingIndicator();
+                
+                // Handle different response formats
+                let aiMessage = '';
+                let readyToCreate = false;
+                let studyConfig = null;
+                
+                // The response is wrapped in {status: "success", data: {...}}
+                const responseData = data.data || data;
+                
+                // Extract AI message
+                if (responseData.response) {
+                    aiMessage = responseData.response;
+                } else if (responseData.message) {
+                    aiMessage = responseData.message;
+                } else if (typeof responseData === 'string') {
+                    aiMessage = responseData;
+                } else if (data.response) {
+                    aiMessage = data.response;
+                } else {
+                    aiMessage = 'AI responded but I couldn\'t parse the message. Check console for details.';
+                    console.warn('Unexpected response format:', data);
+                }
+                
+                // Check if ready to create
+                if (responseData.ready_to_create || data.ready_to_create || 
+                    (aiMessage && aiMessage.includes('[READY_TO_CREATE]')) ||
+                    (aiMessage && aiMessage.toLowerCase().includes('ready to create'))) {
+                    readyToCreate = true;
+                }
+                
+                // Get study config - check multiple locations
+                if (responseData.study_config) {
+                    studyConfig = responseData.study_config;
+                } else if (responseData.study_data) {
+                    studyConfig = responseData.study_data;
+                } else if (responseData.forms) {
+                    // If we have forms directly, construct study config
+                    studyConfig = {
+                        name: responseData.study_name || 'Generated Study',
+                        description: responseData.study_description || 'AI-generated study',
+                        duration_days: responseData.duration_days || 90,
+                        forms: responseData.forms
+                    };
+                }
+                
+                console.log('Extracted data:', {
+                    aiMessage: aiMessage.substring(0, 100) + '...',
+                    readyToCreate,
+                    hasStudyConfig: !!studyConfig
+                });
+                
+                // Add AI response to chat
+                if (aiMessage) {
+                    addMessage('ai', aiMessage);
+                }
+                
+                // Check if ready to create
+                if (readyToCreate && studyConfig) {
+                    console.log('✅ AI is ready! Study config:', studyConfig);
+                    studyData = studyConfig;
+                    showStudyPreview(studyData);
+                } else if (readyToCreate && !studyConfig) {
+                    console.warn('⚠️ AI says ready but no study config found');
+                    
+                    // Add a manual create button as fallback
+                    addMessage('ai', `
+                        🤔 I'm ready to create your study! However, I need the final confirmation.
+                        
+                        <button onclick="manualCreateStudy()" style="
+                            margin-top: 10px;
+                            padding: 10px 20px;
+                            background: #28a745;
+                            color: white;
+                            border: none;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-weight: 600;
+                        ">
+                            ✅ Create Study Now
+                        </button>
+                    `);
+                } else if (aiMessage && (aiMessage.toLowerCase().includes('confirm') || aiMessage.toLowerCase().includes('specifications'))) {
+                    // AI is asking for confirmation - add create button
+                    setTimeout(() => {
+                        addMessage('ai', `
+                            <button onclick="manualCreateStudy()" style="
+                                padding: 10px 20px;
+                                background: #28a745;
+                                color: white;
+                                border: none;
+                                border-radius: 8px;
+                                cursor: pointer;
+                                font-weight: 600;
+                            ">
+                                ✅ Yes, Create This Study
+                            </button>
+                            <button onclick="document.getElementById('userInput').value='Can you modify the forms?'; document.getElementById('userInput').focus();" style="
+                                margin-left: 10px;
+                                padding: 10px 20px;
+                                background: #667eea;
+                                color: white;
+                                border: none;
+                                border-radius: 8px;
+                                cursor: pointer;
+                                font-weight: 600;
+                            ">
+                                🔄 Make Changes
+                            </button>
+                        `);
+                    }, 500);
+                }
+                
+            } catch (error) {
+                console.error('Error sending message:', error);
+                removeTypingIndicator();
+                addMessage('ai', '⚠️ Error processing your message. Please try again.');
+            } finally {
+                isWaitingForAI = false;
+                document.getElementById('sendBtn').disabled = false;
+            }
+        }
+        
+        // Add message to chat
+        function addMessage(type, text) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${type === 'ai' ? '🤖' : '👤'}</div>
+                <div class="message-content">
+                    <div class="message-bubble">${formatMessage(text)}</div>
+                    <div class="message-time">${time}</div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        // Format message (handle markdown-style formatting)
+        function formatMessage(text) {
+            // Defensive check
+            if (!text || typeof text !== 'string') {
+                console.warn('formatMessage called with invalid text:', text);
+                return 'Error: Invalid message format';
+            }
+            
+            // Remove [READY_TO_CREATE] tag from display
+            text = text.replace(/\[READY_TO_CREATE\]/g, '');
+            
+            // Convert markdown-style code blocks
+            text = text.replace(/```([\s\S]*?)```/g, '<pre style="background: #f8f9fa; padding: 10px; border-radius: 6px; margin: 10px 0;">$1</pre>');
+            
+            // Convert line breaks
+            text = text.replace(/\n/g, '<br>');
+            
+            return text;
+        }
+        
+        // Show typing indicator
+        function showTypingIndicator() {
+            const messagesContainer = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message ai';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerHTML = `
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    <div class="message-bubble">
+                        <div class="typing-indicator">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        // Remove typing indicator
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+        
+        // Show study preview
+        function showStudyPreview(data) {
+            const container = document.getElementById('previewContainer');
+            
+            // Build preview HTML
+            let html = '<h2>📋 Generated Study</h2>';
+            
+            html += `
+                <div class="study-preview">
+                    <div class="study-header">
+                        <h3>${data.name || 'Untitled Study'}</h3>
+                        <p>${data.description || 'No description provided'}</p>
+                        <div class="study-meta">
+                            <div class="study-meta-item">
+                                <span>📅</span>
+                                <span>${data.duration_days || 90} days</span>
+                            </div>
+                            <div class="study-meta-item">
+                                <span>📋</span>
+                                <span>${(data.forms || []).length} forms</span>
+                            </div>
+                        </div>
+                    </div>
+            `;
+            
+            // Forms
+            if (data.forms && data.forms.length > 0) {
+                data.forms.forEach((form, idx) => {
+                    html += `
+                        <div class="form-preview">
+                            <h4>
+                                Form ${idx + 1}: ${form.form_name || form.name || 'Untitled Form'}
+                                <span class="form-frequency">Every ${form.frequency_days || 1} day${(form.frequency_days || 1) > 1 ? 's' : ''}</span>
+                            </h4>
+                    `;
+                    
+                    if (form.fields && form.fields.length > 0) {
+                        html += '<div class="form-fields">';
+                        form.fields.forEach(field => {
+                            html += `
+                                <div class="field-item">
+                                    <div class="field-name">
+                                        ${field.field_name || field.label || field.name}
+                                        ${field.required ? '<span class="field-required">*</span>' : ''}
+                                    </div>
+                                    <div class="field-type">Type: ${field.field_type || field.type || 'text'}</div>
+                                </div>
+                            `;
+                        });
+                        html += '</div>';
+                    }
+                    
+                    html += '</div>';
+                });
+            }
+            
+            // Calendar preview
+            if (data.forms && data.forms.length > 0) {
+                html += `
+                    <div class="calendar-preview">
+                        <h4>📅 Schedule Preview (First 7 Days)</h4>
+                `;
+                
+                // Simple schedule calculation
+                for (let day = 1; day <= 7; day++) {
+                    const dayForms = data.forms.filter(f => {
+                        const freq = f.frequency_days || 1;
+                        return day % freq === 1;
+                    });
+                    
+                    if (dayForms.length > 0) {
+                        html += `
+                            <div class="calendar-day">
+                                <div class="calendar-day-header">
+                                    <span class="calendar-day-number">Day ${day}</span>
+                                </div>
+                                <div class="calendar-forms">
+                                    ${dayForms.map(f => `<span class="form-badge">${f.form_name || f.name}</span>`).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+                
+                html += '</div>';
+            }
+            
+            // Action buttons
+            html += `
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="approveStudy()">
+                        ✅ Approve & Create Study
+                    </button>
+                    <button class="btn btn-secondary" onclick="regenerate()">
+                        🔄 Ask AI to Modify
+                    </button>
+                </div>
+            `;
+            
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
+        
+        // Approve and create study
+        async function approveStudy() {
+            if (!studyData) {
+                alert('No study data to approve');
+                return;
+            }
+            
+            await createStudy(studyData);
+        }
+        
+        // Manual create study (fallback)
+        async function manualCreateStudy() {
+            addMessage('user', 'Yes, create this study!');
+            
+            try {
+                // Call the create-study endpoint
+                const response = await fetch(`${API_BASE}/api/v1/conversation/create-study`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.status === 401 || response.status === 403) {
+                    localStorage.removeItem('auth_token');
+                    alert('Session expired. Please login again.');
+                    await promptLogin();
+                    return;
+                }
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(JSON.stringify(error));
+                }
+                
+                const result = await response.json();
+                console.log('Study created!', result);
+                
+                // Show success
+                const banner = document.getElementById('successBanner');
+                banner.classList.add('show');
+                
+                addMessage('ai', '🎉 Perfect! Your study has been created successfully! You can now go to the Investigator Dashboard to enroll subjects.');
+                
+            } catch (error) {
+                console.error('Error creating study:', error);
+                addMessage('ai', `⚠️ Error creating study: ${error.message}`);
+            }
+        }
+        
+        // Create study helper
+        async function createStudy(config) {
+            
+            try {
+                console.log('Creating study...', studyData);
+                
+                const response = await fetch(`${API_BASE}/api/v1/conversation/create-study`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        study_config: studyData
+                    })
+                });
+                
+                if (response.status === 401 || response.status === 403) {
+                    localStorage.removeItem('auth_token');
+                    alert('Session expired. Please login again.');
+                    await promptLogin();
+                    return;
+                }
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(JSON.stringify(error));
+                }
+                
+                const result = await response.json();
+                console.log('Study created!', result);
+                
+                // Show success
+                const banner = document.getElementById('successBanner');
+                banner.classList.add('show');
+                
+                addMessage('ai', '🎉 Perfect! Your study has been created successfully! You can now go to the Investigator Dashboard to enroll subjects.');
+                
+            } catch (error) {
+                console.error('Error creating study:', error);
+                addMessage('ai', `⚠️ Error creating study: ${error.message}. Please try again or modify the configuration.`);
+            }
+        }
+        
+        // Create study helper function
+        async function createStudy(config) {
+            try {
+                console.log('Creating study with config...', config);
+                
+                const response = await fetch(`${API_BASE}/api/v1/conversation/create-study`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        study_config: config
+                    })
+                });
+                
+                if (response.status === 401 || response.status === 403) {
+                    localStorage.removeItem('auth_token');
+                    alert('Session expired. Please login again.');
+                    await promptLogin();
+                    return;
+                }
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(JSON.stringify(error));
+                }
+                
+                const result = await response.json();
+                console.log('Study created successfully!', result);
+                
+                // Show success banner
+                const banner = document.getElementById('successBanner');
+                banner.classList.add('show');
+                
+                addMessage('ai', '🎉 Excellent! Your study has been created successfully! You can now go to the Investigator Dashboard to enroll subjects.');
+                
+            } catch (error) {
+                console.error('Error creating study:', error);
+                addMessage('ai', `⚠️ Error creating study: ${error.message}. Please try again or modify the configuration.`);
+            }
+        }
+        
+        // Ask AI to regenerate/modify
+        function regenerate() {
+            const input = document.getElementById('userInput');
+            input.value = 'Can you modify the study based on my feedback?';
+            input.focus();
+        }
+    </script>
+</body>
+</html>

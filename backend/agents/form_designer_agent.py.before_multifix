@@ -69,25 +69,7 @@ When creating multiple forms, use this structure:
   "study_classification": {...},
   "forms": [
     {
-      IMPORTANT: If the description mentions MULTIPLE distinct tracking needs, frequencies, or purposes, create MULTIPLE forms!
-
-Examples requiring multiple forms:
-- "Daily X and weekly Y" → 2 forms (different frequencies)
-- "Track A and track B" → 2 forms (different purposes)
-
-When creating multiple forms, use this structure:
-{
-  "study_classification": {...},
-  "forms": [
-    {"form_schema": {...}, "frequency_days": 1},
-    {"form_schema": {...}, "frequency_days": 7}
-  ],
-  "metadata_suggestions": {...}
-}
-
-For a SINGLE form, use original structure.
-
-"form_schema": {...},
+      "form_schema": {...},
       "frequency_days": 1
     },
     {
@@ -291,10 +273,6 @@ IMPORTANT: Output ONLY the JSON, nothing else! No markdown code blocks, no ```js
             # Check if clarification is needed
             if enhanced_classification.get("needs_clarification"):
                 print("❓ Clarification needed from user")
-            
-            # Handle both single form and multiple forms
-            if "forms" in form_data:
-                print(f"   Created {len(form_data['forms'])} forms")
             
             # Handle both single form and multiple forms
             if "forms" in form_data:

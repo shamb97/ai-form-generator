@@ -1,0 +1,215 @@
+"""
+Schedule Optimizer Agent
+========================
+
+This agent creates optimal form schedules using the LCM algorithm!
+
+It takes form frequencies and generates smart schedules that minimize
+participant burden while ensuring data quality.
+"""
+
+from typing import Dict, Any, List
+import json
+import sys
+import os
+
+# Handle imports whether running as module or script
+if __name__ == "__main__":
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from agents.base_agent import BaseAgent
+else:
+    from .base_agent import BaseAgent
+
+
+class ScheduleOptimizerAgent(BaseAgent):
+    """
+    Specialized agent for optimizing form schedules
+    
+    Uses clinical research best practices to create participant-friendly schedules
+    """
+    
+    def __init__(self):
+        system_prompt = """You are an expert clinical trial schedule optimizer.
+
+Your job is to analyze form frequencies and create optimal schedules using the LCM (Least Common Multiple) algorithm.
+
+RULES:
+1. Consider participant burden - don't overload any single day
+2. Spread forms evenly when possible
+3. Group related assessments on the same day
+4. Recommend appropriate frequencies for different form types
+5. ALWAYS output valid JSON only - NO markdown code blocks, NO explanations
+
+OUTPUT FORMAT (JSON only - no ```json or ``` markers):
+{
+  "recommended_lcm": number,
+  "schedule_rationale": "Why this schedule works best",
+  "form_distribution": {
+    "form_name": [list of day numbers when form appears]
+  },
+  "participant_burden_analysis": {
+    "max_forms_per_day": number,
+    "average_forms_per_day": number,
+    "busiest_days": [day numbers]
+  },
+  "recommendations": ["list of optimization suggestions"]
+}
+
+CRITICAL: Output ONLY raw JSON, nothing else! No markdown formatting!"""
+        
+        super().__init__(
+            name="Schedule Optimizer Agent",
+            role="Creates optimal form schedules using LCM algorithm",
+            system_prompt=system_prompt
+        )
+    
+    def _clean_json_response(self, response: str) -> str:
+        """
+        Clean up JSON response - remove markdown code blocks if present
+        """
+        response_clean = response.strip()
+        
+        # Remove markdown code blocks
+        if response_clean.startswith("```"):
+            lines = response_clean.split("\n")
+            # Remove first line (```json or ```)
+            lines = lines[1:]
+            # Remove last line (```)
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]
+            response_clean = "\n".join(lines)
+        
+        return response_clean.strip()
+    
+    def optimize_schedule(
+        self, 
+        forms: List[Dict[str, Any]], 
+        study_duration: int
+    ) -> Dict[str, Any]:
+        """
+        Optimize the schedule for a set of forms
+        
+        Args:
+            forms: List of forms with their frequencies
+            study_duration: Total study duration in days
+            
+        Returns:
+            Optimized schedule with LCM and distribution
+        """
+        print(f"\n📅 Optimizing schedule for {len(forms)} forms over {study_duration} days...")
+        
+        # Format the forms data
+        forms_info = "\n".join([
+            f"- {form['form_name']}: every {form.get('frequency', 1)} days"
+            for form in forms
+        ])
+        
+        prompt = f"""Analyze these forms and create an optimal schedule:
+
+Study Duration: {study_duration} days
+
+Forms:
+{forms_info}
+
+Calculate the LCM of all frequencies and provide schedule recommendations.
+Remember: Output ONLY raw JSON, no markdown code blocks!"""
+        
+        response = self.think(prompt)
+        
+        try:
+            # Clean the response
+            response_clean = self._clean_json_response(response)
+            
+            schedule = json.loads(response_clean)
+            print(f"✅ Schedule optimized!")
+            print(f"   Recommended LCM: {schedule.get('recommended_lcm', 'N/A')}")
+            print(f"   Max forms/day: {schedule.get('participant_burden_analysis', {}).get('max_forms_per_day', 'N/A')}")
+            return schedule
+        except json.JSONDecodeError as e:
+            print(f"❌ Error parsing schedule JSON: {e}")
+            print(f"Raw response (first 300 chars): {response[:300]}")
+            return {
+                "error": "Failed to parse schedule",
+                "raw_response": response[:200]
+            }
+    
+    def suggest_frequency(self, form_type: str, clinical_context: str) -> Dict[str, Any]:
+        """
+        Suggest appropriate frequency for a form type
+        
+        Args:
+            form_type: Type of form (e.g., "mood tracker", "adverse events")
+            clinical_context: Study context
+            
+        Returns:
+            Frequency recommendation with rationale
+        """
+        print(f"\n💡 Suggesting frequency for '{form_type}'...")
+        
+        prompt = f"""Suggest an appropriate completion frequency for this form:
+
+Form Type: {form_type}
+Clinical Context: {clinical_context}
+
+Provide recommendation as raw JSON (no markdown code blocks):
+{{
+  "recommended_frequency": number (in days),
+  "rationale": "why this frequency is appropriate",
+  "alternatives": [
+    {{"frequency": number, "use_case": "when to use this alternative"}}
+  ]
+}}
+
+Remember: Output ONLY raw JSON, no markdown formatting!"""
+        
+        response = self.think(prompt)
+        
+        try:
+            # Clean the response
+            response_clean = self._clean_json_response(response)
+            
+            suggestion = json.loads(response_clean)
+            print(f"✅ Suggested frequency: Every {suggestion.get('recommended_frequency', 'N/A')} days")
+            return suggestion
+        except json.JSONDecodeError as e:
+            print(f"❌ Error parsing suggestion JSON: {e}")
+            print(f"Raw response (first 300 chars): {response[:300]}")
+            return {
+                "error": "Failed to parse suggestion",
+                "raw_response": response[:200]
+            }
+
+
+# Test the agent if run directly
+if __name__ == "__main__":
+    print("\n" + "="*60)
+    print("🧪 TESTING SCHEDULE OPTIMIZER AGENT")
+    print("="*60)
+    
+    # Create the agent
+    optimizer = ScheduleOptimizerAgent()
+    
+    # Test 1: Optimize a schedule
+    print("\n--- Test 1: Optimize Multi-Form Schedule ---")
+    test_forms = [
+        {"form_name": "Daily Mood Tracker", "frequency": 1},
+        {"form_name": "Weekly Quality of Life", "frequency": 7},
+        {"form_name": "Bi-weekly Symptoms", "frequency": 14}
+    ]
+    
+    schedule = optimizer.optimize_schedule(test_forms, study_duration=28)
+    print("\nResult:")
+    print(json.dumps(schedule, indent=2))
+    
+    # Test 2: Suggest frequency
+    print("\n--- Test 2: Suggest Frequency ---")
+    suggestion = optimizer.suggest_frequency(
+        "Adverse Event Reporting",
+        "Cancer treatment trial with chemotherapy"
+    )
+    print("\nResult:")
+    print(json.dumps(suggestion, indent=2))
+    
+    print("\n" + "="*60)
+    print("✅ SCHEDULE OPTIMIZER AGENT TEST COMPLETE!")
+    print("="*60 + "\n")

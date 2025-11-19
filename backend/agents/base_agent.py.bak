@@ -13,7 +13,7 @@ from typing import Dict, List, Any, Optional
 from anthropic import Anthropic
 from dotenv import load_dotenv
 
-# Load environment variables from env file
+# Load environment variables from .env file
 load_dotenv()
 
 class BaseAgent:

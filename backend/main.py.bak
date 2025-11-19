@@ -1010,11 +1010,11 @@ async def ai_review_quality(request: AIQARequest):
 
 @app.post("/api/v1/conversation/start")
 async def start_conversation(
-    request: dict
+    current_user: dict = Depends(get_current_user)
 ):
     """Start a new conversational study creation session"""
     try:
-        user_id = request.get("user_id", "anonymous_user")
+        user_id = str(current_user.user_id)
         result = conversation_manager.start_conversation(user_id)
         
         return {
@@ -1028,24 +1028,18 @@ async def start_conversation(
 
 @app.post("/api/v1/conversation/message")
 async def send_conversation_message(
-    message: dict
+    message: dict,
+    current_user: dict = Depends(get_current_user)
 ):
     """Send a message in the conversation"""
     try:
-        print(f"🔍 Received conversation message request: {message}")
-        
         msg = message.get("message", "")
         
         if not msg:
             raise HTTPException(status_code=400, detail="Message is required")
         
-        user_id = message.get("user_id", "anonymous_user")
-        print(f"📤 Sending message to conversation_manager for user: {user_id}")
-        print(f"💬 Message: {msg}")
-        
+        user_id = str(current_user.user_id)
         result = conversation_manager.send_message(user_id, msg)
-        
-        print(f"✅ Conversation manager returned: {result}")
         
         return {
             "status": "success",
@@ -1053,10 +1047,6 @@ async def send_conversation_message(
         }
         
     except Exception as e:
-        print(f"❌ ERROR in send_conversation_message: {str(e)}")
-        print(f"   Error type: {type(e)}")
-        import traceback
-        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1116,7 +1106,7 @@ async def clear_conversation(
 
 @app.post("/api/v1/conversation/create-study")
 async def create_study_from_conversation(
-    request: dict,
+    current_user: dict = Depends(get_current_user),
     db = Depends(get_db)  # ← ADD DATABASE DEPENDENCY
 ):
     """
@@ -1124,7 +1114,7 @@ async def create_study_from_conversation(
     This endpoint is called when user approves the AI-generated study
     """
     try:
-        user_id = request.get("user_id", "anonymous_user")
+        user_id = str(current_user.user_id)
         
         # Get the conversation history
         history = conversation_manager.get_conversation(user_id)
@@ -2619,17 +2609,12 @@ def list_studies(db = Depends(get_db)):
                     "name": s.name,
                     "description": s.description,
                     "created_at": s.created_at.isoformat(),
-                    "status": s.status,
                     "form_count": len(s.forms)
                 }
                 for s in studies
             ]
         }
     except Exception as e:
-        print(f"❌ ERROR in list_studies: {e}")
-        print(f"   Type: {type(e)}")
-        import traceback
-        traceback.print_exc()
         return {
             "success": False,
             "error": str(e),
@@ -2658,7 +2643,6 @@ def get_study_details_endpoint(study_id: int, db = Depends(get_db)):
             "study": {
                 "id": study.id,
                 "name": study.name,
-                "status": study.status,
                 "description": study.description,
                 "created_at": study.created_at.isoformat(),
                 "forms": [

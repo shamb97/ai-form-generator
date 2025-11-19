@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Clinical Research - Design Studio</title>
+    <style>
+        /* ===== RESET & BASICS ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50;
+            overflow: hidden;
+        }
+
+        /* ===== MAIN LAYOUT ===== */
+        .studio-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* ===== LEFT SIDEBAR (NAVIGATION) ===== */
+        .sidebar {
+            width: 280px;
+            background: #2c3e50;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            padding: 24px 20px;
+            background: #34495e;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .sidebar-header p {
+            font-size: 13px;
+            color: #95a5a6;
+        }
+
+        .nav-panels {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 0;
+        }
+
+        .nav-panel-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .nav-panel-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-panel-item.active {
+            background: rgba(52, 152, 219, 0.15);
+            border-left-color: #3498db;
+            color: #3498db;
+        }
+
+        .nav-panel-item .icon {
+            font-size: 20px;
+            margin-right: 12px;
+            width: 24px;
+            text-align: center;
+        }
+
+        /* ===== RIGHT CANVAS AREA ===== */
+        .canvas-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Top Bar */
+        .canvas-header {
+            background: white;
+            padding: 16px 32px;
+            border-bottom: 1px solid #e1e8ed;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .canvas-header h2 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .canvas-header .actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-secondary {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+
+        .btn-secondary:hover {
+            background: #d5dbdd;
+        }
+
+        .btn-ai {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-ai:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Canvas Content */
+        .canvas-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px;
+            background: #f5f7fa;
+        }
+
+        .panel-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .panel-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== PANEL CONTENT CARDS ===== */
+        .content-card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .content-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #2c3e50;
+        }
+
+        .content-card p {
+            line-height: 1.6;
+            color: #7f8c8d;
+            margin-bottom: 12px;
+        }
+
+        /* Hero CTA for AI */
+        .ai-hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 48px;
+            text-align: center;
+            color: white;
+            margin-bottom: 24px;
+        }
+
+        .ai-hero h2 {
+            font-size: 32px;
+            margin-bottom: 16px;
+            font-weight: 700;
+        }
+
+        .ai-hero p {
+            font-size: 18px;
+            margin-bottom: 32px;
+            opacity: 0.95;
+            color: white;
+        }
+
+        .ai-hero .btn-ai {
+            background: white;
+            color: #667eea;
+            font-size: 18px;
+            padding: 16px 32px;
+            display: inline-flex;
+        }
+
+        .ai-hero .btn-ai:hover {
+            background: #f8f9fa;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #95a5a6;
+        }
+
+        .empty-state .icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 8px;
+            color: #7f8c8d;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            color: #95a5a6;
+        }
+
+        /* ===== AI CHAT MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            animation: fadeInOverlay 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes fadeInOverlay {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .chat-modal {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 700px;
+            height: 80vh;
+            max-height: 700px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-header {
+            padding: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .chat-header .close-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 24px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .chat-header .close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 16px;
+            animation: messageSlide 0.3s ease;
+        }
+
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.ai {
+            display: flex;
+            gap: 12px;
+        }
+
+        .message.user {
+            display: flex;
+            gap: 12px;
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .message.ai .message-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .message.user .message-avatar {
+            background: #3498db;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.5;
+        }
+
+        .message.ai .message-bubble {
+            background: white;
+            color: #2c3e50;
+        }
+
+        .message.user .message-bubble {
+            background: #3498db;
+            color: white;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 12px;
+            width: fit-content;
+        }
+
+        .typing-indicator.active {
+            display: block;
+        }
+
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #95a5a6;
+            margin: 0 2px;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        .chat-input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e1e8ed;
+            border-radius: 0 0 16px 16px;
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e1e8ed;
+            border-radius: 24px;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .chat-input:focus {
+            border-color: #667eea;
+        }
+
+        .send-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: scale(1);
+        }
+
+        /* Success State */
+        .success-state {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .success-state .icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .success-state h3 {
+            font-size: 24px;
+            margin-bottom: 12px;
+            color: #27ae60;
+        }
+
+        .success-state p {
+            font-size: 16px;
+            color: #7f8c8d;
+            margin-bottom: 24px;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 240px;
+            }
+            
+            .canvas-content {
+                padding: 20px;
+            }
+
+            .chat-modal {
+                width: 95%;
+                height: 85vh;
+            }
+        }
+
+        /* ===== SCROLLBAR STYLING ===== */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #bdc3c7;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #95a5a6;
+        }
+    </style>
+</head>
+<body>
+    <div class="studio-container">
+        <!-- LEFT SIDEBAR: NAVIGATION PANELS -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>🎨 Design Studio</h1>
+                <p id="study-subtitle">No Study Loaded</p>
+            </div>
+            
+            <nav class="nav-panels">
+                <!-- Panel 1: Overview -->
+                <div class="nav-panel-item active" data-panel="overview">
+                    <span class="icon">📊</span>
+                    <span>Overview</span>
+                </div>
+                
+                <!-- Panel 2: Forms -->
+                <div class="nav-panel-item" data-panel="forms">
+                    <span class="icon">📝</span>
+                    <span>Forms</span>
+                </div>
+                
+                <!-- Panel 3: Data Model -->
+                <div class="nav-panel-item" data-panel="data">
+                    <span class="icon">🗄️</span>
+                    <span>Data Model</span>
+                </div>
+                
+                <!-- Panel 4: Schedule -->
+                <div class="nav-panel-item" data-panel="schedule">
+                    <span class="icon">📅</span>
+                    <span>Schedule</span>
+                </div>
+                
+                <!-- Panel 5: Phases -->
+                <div class="nav-panel-item" data-panel="phases">
+                    <span class="icon">⏱️</span>
+                    <span>Phases</span>
+                </div>
+                
+                <!-- Panel 6: Subject Experience -->
+                <div class="nav-panel-item" data-panel="subject">
+                    <span class="icon">👤</span>
+                    <span>Subject Experience</span>
+                </div>
+                
+                <!-- Panel 7: Review & Launch -->
+                <div class="nav-panel-item" data-panel="review">
+                    <span class="icon">✅</span>
+                    <span>Review & Launch</span>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- RIGHT CANVAS AREA -->
+        <main class="canvas-area">
+            <!-- Top Header Bar -->
+            <header class="canvas-header">
+                <h2 id="canvas-title">Study Overview</h2>
+                <div class="actions">
+                    <button class="btn btn-secondary">Preview</button>
+                    <button class="btn btn-primary">Save Changes</button>
+                </div>
+            </header>
+
+            <!-- Main Canvas Content Area -->
+            <section class="canvas-content">
+                <!-- PANEL 1: OVERVIEW -->
+                <div class="panel-content active" id="panel-overview">
+                    <!-- AI Hero Section -->
+                    <div class="ai-hero">
+                        <h2>🤖 Create Your Study with AI</h2>
+                        <p>Describe your research in plain English. Our multi-agent AI system will generate a complete, production-ready clinical research study in minutes.</p>
+                        <button class="btn-ai" id="open-ai-chat">
+                            <span>✨</span>
+                            <span>Start AI Conversation</span>
+                        </button>
+                    </div>
+
+                    <!-- Study Overview (shows after generation) -->
+                    <div id="study-overview-content" style="display: none;">
+                        <div class="content-card">
+                            <h3>📊 Study Overview</h3>
+                            <p><strong>Study Name:</strong> <span id="study-name">Loading...</span></p>
+                            <p><strong>Total Forms:</strong> <span id="study-forms-count">0</span></p>
+                            <p><strong>Study Duration:</strong> <span id="study-duration">0 days</span></p>
+                            <p><strong>Total Phases:</strong> <span id="study-phases-count">0</span></p>
+                            <p><strong>Status:</strong> <span id="study-status">⚠️ Design in Progress</span></p>
+                            <p><strong>Generated by:</strong> <span style="color: #667eea;">🤖 Multi-Agent AI System</span></p>
+                        </div>
+                        
+                        <div class="content-card">
+                            <h3>✅ Readiness Checklist</h3>
+                            <p id="checklist-forms">✅ Forms created by AI</p>
+                            <p id="checklist-schedule">✅ Schedule optimized by AI</p>
+                            <p id="checklist-flow">⏳ Flow settings to review</p>
+                            <p id="checklist-phases">⏳ Phase transitions to verify</p>
+                            <p id="checklist-review">⏳ Final review pending</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PANEL 2: FORMS -->
+                <div class="panel-content" id="panel-forms">
+                    <div class="content-card">
+                        <h3>📝 Study Forms</h3>
+                        <p>This panel will display all AI-generated forms as interactive cards.</p>
+                        <p>You'll be able to:</p>
+                        <ul style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
+                            <li>Review AI-generated forms</li>
+                            <li>Edit form fields</li>
+                            <li>Configure display settings</li>
+                            <li>Set up conditional logic</li>
+                            <li>Drag to reorder forms</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="empty-state">
+                        <div class="icon">📝</div>
+                        <h3>Forms Panel Coming Soon</h3>
+                        <p>This will be built in Hour 5</p>
+                    </div>
+                </div>
+
+                <!-- PANEL 3: DATA MODEL -->
+                <div class="panel-content" id="panel-data">
+                    <div class="content-card">
+                        <h3>🗄️ Data Model</h3>
+                        <p>This panel will show the auto-generated database schema from AI.</p>
+                        <p>You'll see:</p>
+                        <ul style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
+                            <li>Tables and relationships</li>
+                            <li>Field types and constraints</li>
+                            <li>Entity relationship diagram</li>
+                            <li>Export as SQL or JSON</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="empty-state">
+                        <div class="icon">🗄️</div>
+                        <h3>Data Model Coming Soon</h3>
+                        <p>This will be built in Hour 13</p>
+                    </div>
+                </div>
+
+                <!-- PANEL 4: SCHEDULE -->
+                <div class="panel-content" id="panel-schedule">
+                    <div class="content-card">
+                        <h3>📅 Study Schedule</h3>
+                        <p>This panel will display the AI-calculated LCM schedule.</p>
+                        <p>Features:</p>
+                        <ul style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
+                            <li>Interactive calendar view</li>
+                            <li>Color-coded forms</li>
+                            <li>Daily/Weekly/Monthly views</li>
+                            <li>Subject burden calculation</li>
+                            <li>AI-optimized schedule</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="empty-state">
+                        <div class="icon">📅</div>
+                        <h3>Schedule View Coming Soon</h3>
+                        <p>This will be built in Hours 14-15</p>
+                    </div>
+                </div>
+
+                <!-- PANEL 5: PHASES -->
+                <div class="panel-content" id="panel-phases">
+                    <div class="content-card">
+                        <h3>⏱️ Phase Timeline</h3>
+                        <p>This panel will visualize how your study evolves over time.</p>
+                        <p>You'll see:</p>
+                        <ul style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
+                            <li>Horizontal phase timeline</li>
+                            <li>Phase-specific forms</li>
+                            <li>Schedule mutations</li>
+                            <li>Before/After comparisons</li>
+                            <li>AI-recommended transitions</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="empty-state">
+                        <div class="icon">⏱️</div>
+                        <h3>Phase Timeline Coming Soon</h3>
+                        <p>This will be built in Hours 16-17</p>
+                    </div>
+                </div>
+
+                <!-- PANEL 6: SUBJECT EXPERIENCE -->
+                <div class="panel-content" id="panel-subject">
+                    <div class="content-card">
+                        <h3>👤 Subject Experience Simulator</h3>
+                        <p>This is where you'll test the subject's journey.</p>
+                        <p>Preview features:</p>
+                        <ul style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
+                            <li>"Play as Subject" mode</li>
+                            <li>Walk through wizard flow</li>
+                            <li>See AI-bundled daily forms</li>
+                            <li>Test form transitions</li>
+                            <li>Fast-forward through days</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="empty-state">
+                        <div class="icon">👤</div>
+                        <h3>Subject Simulator Coming Soon</h3>
+                        <p>This will be built in Hours 20-21</p>
+                    </div>
+                </div>
+
+                <!-- PANEL 7: REVIEW & LAUNCH -->
+                <div class="panel-content" id="panel-review">
+                    <div class="content-card">
+                        <h3>✅ Pre-Launch Review</h3>
+                        <p>Final checklist before going live.</p>
+                        <p>You'll verify:</p>
+                        <ul style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
+                            <li>All forms configured correctly</li>
+                            <li>AI-generated schedule validated</li>
+                            <li>Flow settings optimal</li>
+                            <li>Phase transitions work</li>
+                            <li>Subject experience tested</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="empty-state">
+                        <div class="icon">✅</div>
+                        <h3>Review Panel Coming Soon</h3>
+                        <p>This will be built in Hour 22</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- AI CHAT MODAL -->
+    <div class="modal-overlay" id="chat-modal-overlay">
+        <div class="chat-modal">
+            <div class="chat-header">
+                <h3>🤖 AI Study Generator</h3>
+                <button class="close-btn" id="close-chat">×</button>
+            </div>
+            
+            <div class="chat-messages" id="chat-messages">
+                <!-- Messages will be added here dynamically -->
+            </div>
+            
+            <div class="chat-input-area">
+                <div class="chat-input-wrapper">
+                    <input 
+                        type="text" 
+                        class="chat-input" 
+                        id="chat-input" 
+                        placeholder="Describe your research study..."
+                        autocomplete="off"
+                    >
+                    <button class="send-btn" id="send-btn">
+                        ➤
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== CONFIGURATION =====
+        const API_BASE_URL = 'http://localhost:8000';
+        
+        // ===== STATE =====
+        let conversationState = {
+            userId: null,
+            conversationStarted: false,
+            studyGenerated: false,
+            generatedStudyId: null
+        };
+
+        // ===== NAVIGATION LOGIC =====
+        const navPanels = document.querySelectorAll('.nav-panel-item');
+        const panelContents = document.querySelectorAll('.panel-content');
+        const canvasTitle = document.getElementById('canvas-title');
+
+        const panelTitles = {
+            'overview': 'Study Overview',
+            'forms': 'Forms Management',
+            'data': 'Data Model',
+            'schedule': 'Study Schedule',
+            'phases': 'Phase Timeline',
+            'subject': 'Subject Experience',
+            'review': 'Review & Launch'
+        };
+
+        navPanels.forEach(navItem => {
+            navItem.addEventListener('click', function() {
+                const targetPanel = this.getAttribute('data-panel');
+                
+                navPanels.forEach(item => item.classList.remove('active'));
+                this.classList.add('active');
+                
+                panelContents.forEach(content => content.classList.remove('active'));
+                
+                const targetContent = document.getElementById(`panel-${targetPanel}`);
+                if (targetContent) {
+                    targetContent.classList.add('active');
+                }
+                
+                canvasTitle.textContent = panelTitles[targetPanel] || 'Design Studio';
+                
+                console.log(`Switched to panel: ${targetPanel}`);
+            });
+        });
+
+        // ===== AI CHAT MODAL LOGIC =====
+        const openAIChatBtn = document.getElementById('open-ai-chat');
+        const chatModalOverlay = document.getElementById('chat-modal-overlay');
+        const closeChatBtn = document.getElementById('close-chat');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        // Open modal
+        openAIChatBtn.addEventListener('click', async () => {
+            chatModalOverlay.classList.add('active');
+            chatInput.focus();
+            
+            // Initialize conversation if not started
+            if (!conversationState.conversationStarted) {
+                await startConversation();
+            }
+        });
+
+        // Close modal
+        closeChatBtn.addEventListener('click', () => {
+            chatModalOverlay.classList.remove('active');
+        });
+
+        // Close on overlay click
+        chatModalOverlay.addEventListener('click', (e) => {
+            if (e.target === chatModalOverlay) {
+                chatModalOverlay.classList.remove('active');
+            }
+        });
+
+        // Send message on button click
+        sendBtn.addEventListener('click', sendMessage);
+
+        // Send message on Enter key
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // ===== AI CONVERSATION FUNCTIONS =====
+
+        async function startConversation() {
+            try {
+                // Generate a unique user ID
+                conversationState.userId = 'user_' + Date.now();
+                
+                // Call the start conversation endpoint
+                const response = await fetch(`${API_BASE_URL}/api/v1/conversation/start`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: conversationState.userId
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to start conversation');
+                }
+
+                const data = await response.json();
+                conversationState.conversationStarted = true;
+
+                // Add AI's greeting message
+                addMessage('ai', data.message || "Hello! I'm your AI research assistant. Tell me about the clinical research study you'd like to create, and I'll generate a complete, production-ready study for you.");
+                
+                console.log('✅ Conversation started:', conversationState.userId);
+            } catch (error) {
+                console.error('Error starting conversation:', error);
+                addMessage('ai', "I'm having trouble connecting. Please make sure your backend is running on port 8000 and try again.");
+            }
+        }
+
+        async function sendMessage() {
+            const message = chatInput.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message to chat
+            addMessage('user', message);
+            chatInput.value = '';
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            try {
+                // Send message to backend
+                const response = await fetch(`${API_BASE_URL}/api/v1/conversation/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: conversationState.userId,
+                        message: message
+                    })
+                });
+
+                hideTypingIndicator();
+
+                if (!response.ok) {
+                    throw new Error('Failed to send message');
+                }
+
+                const data = await response.json();
+                
+                // Add AI's response
+                addMessage('ai', data.message);
+                
+                // Check if study is ready to generate
+                if (data.ready_to_generate || data.message.toLowerCase().includes('ready to generate')) {
+                    // Offer to generate study
+                    setTimeout(() => {
+                        addMessage('ai', "🎉 I have all the information I need! Would you like me to generate your complete study now? (Reply 'yes' or 'generate study')");
+                    }, 1000);
+                }
+                
+                // Check if user wants to generate
+                if (message.toLowerCase().includes('yes') || message.toLowerCase().includes('generate')) {
+                    setTimeout(() => {
+                        generateStudy();
+                    }, 500);
+                }
+                
+            } catch (error) {
+                hideTypingIndicator();
+                console.error('Error sending message:', error);
+                addMessage('ai', "I'm sorry, I encountered an error. Please try again.");
+            }
+        }
+
+        async function generateStudy() {
+            addMessage('ai', "🚀 Generating your complete study now... This will take about 30-60 seconds.");
+            addMessage('ai', "⚙️ Activating multi-agent AI system:\n• Form Designer Agent\n• Schedule Optimizer Agent\n• Policy Recommender Agent\n• Clinical Compliance Agent\n• Reflection QA Agent");
+            
+            showTypingIndicator();
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/v1/conversation/create-study`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: conversationState.userId
+                    })
+                });
+
+                hideTypingIndicator();
+
+                if (!response.ok) {
+                    throw new Error('Failed to generate study');
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    conversationState.studyGenerated = true;
+                    conversationState.generatedStudyId = data.study_id;
+                    
+                    // Show success message
+                    showSuccessState(data);
+                    
+                    // Load study into design studio
+                    setTimeout(() => {
+                        loadStudyIntoStudio(data);
+                        chatModalOverlay.classList.remove('active');
+                    }, 3000);
+                } else {
+                    addMessage('ai', "I encountered an issue generating the study. Error: " + (data.error || 'Unknown error'));
+                }
+                
+            } catch (error) {
+                hideTypingIndicator();
+                console.error('Error generating study:', error);
+                addMessage('ai', "I'm sorry, I encountered an error while generating the study. Please make sure your backend is running and try again.");
+            }
+        }
+
+        function addMessage(sender, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = sender === 'ai' ? '🤖' : '👤';
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            bubble.textContent = text;
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(bubble);
+            
+            chatMessages.appendChild(messageDiv);
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const indicator = document.createElement('div');
+            indicator.className = 'message ai';
+            indicator.id = 'typing-indicator';
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = '🤖';
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'typing-indicator active';
+            bubble.innerHTML = '<span></span><span></span><span></span>';
+            
+            indicator.appendChild(avatar);
+            indicator.appendChild(bubble);
+            
+            chatMessages.appendChild(indicator);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+
+        function showSuccessState(data) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-state';
+            successDiv.innerHTML = `
+                <div class="icon">✅</div>
+                <h3>Study Generated Successfully!</h3>
+                <p>Your complete clinical research study has been created.</p>
+                <p><strong>Study Name:</strong> ${data.study_name || 'New Study'}</p>
+                <p><strong>Forms Created:</strong> ${data.forms_count || 0}</p>
+                <p>Loading into Design Studio...</p>
+            `;
+            
+            chatMessages.appendChild(successDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function loadStudyIntoStudio(studyData) {
+            // Update sidebar subtitle
+            document.getElementById('study-subtitle').textContent = studyData.study_name || 'AI-Generated Study';
+            
+            // Hide AI hero, show study overview
+            document.querySelector('.ai-hero').style.display = 'none';
+            document.getElementById('study-overview-content').style.display = 'block';
+            
+            // Populate study details
+            document.getElementById('study-name').textContent = studyData.study_name || 'AI-Generated Study';
+            document.getElementById('study-forms-count').textContent = studyData.forms_count || 0;
+            document.getElementById('study-duration').textContent = (studyData.duration || 0) + ' days';
+            document.getElementById('study-phases-count').textContent = studyData.phases_count || 0;
+            document.getElementById('study-status').innerHTML = '<span style="color: #27ae60;">✅ Generated by AI</span>';
+            
+            console.log('✅ Study loaded into Design Studio:', studyData);
+            
+            // Show success notification
+            alert('🎉 Success! Your AI-generated study is now loaded in the Design Studio. Review the forms, schedule, and settings in the panels on the left.');
+        }
+
+        // ===== INITIALIZATION =====
+        console.log('🎨 Design Studio Initialized');
+        console.log('✅ 7 navigation panels loaded');
+        console.log('✅ Canvas switching ready');
+        console.log('✅ AI conversation interface ready');
+        console.log('🤖 Multi-agent backend: ' + API_BASE_URL);
+        console.log('Ready for Hour 2-3 testing!');
+    </script>
+</body>
+</html>

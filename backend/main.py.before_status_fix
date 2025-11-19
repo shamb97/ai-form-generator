@@ -1032,20 +1032,13 @@ async def send_conversation_message(
 ):
     """Send a message in the conversation"""
     try:
-        print(f"🔍 Received conversation message request: {message}")
-        
         msg = message.get("message", "")
         
         if not msg:
             raise HTTPException(status_code=400, detail="Message is required")
         
         user_id = message.get("user_id", "anonymous_user")
-        print(f"📤 Sending message to conversation_manager for user: {user_id}")
-        print(f"💬 Message: {msg}")
-        
         result = conversation_manager.send_message(user_id, msg)
-        
-        print(f"✅ Conversation manager returned: {result}")
         
         return {
             "status": "success",
@@ -1053,10 +1046,6 @@ async def send_conversation_message(
         }
         
     except Exception as e:
-        print(f"❌ ERROR in send_conversation_message: {str(e)}")
-        print(f"   Error type: {type(e)}")
-        import traceback
-        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -2619,7 +2608,6 @@ def list_studies(db = Depends(get_db)):
                     "name": s.name,
                     "description": s.description,
                     "created_at": s.created_at.isoformat(),
-                    "status": s.status,
                     "form_count": len(s.forms)
                 }
                 for s in studies
@@ -2658,7 +2646,6 @@ def get_study_details_endpoint(study_id: int, db = Depends(get_db)):
             "study": {
                 "id": study.id,
                 "name": study.name,
-                "status": study.status,
                 "description": study.description,
                 "created_at": study.created_at.isoformat(),
                 "forms": [

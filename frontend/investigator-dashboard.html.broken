@@ -1,0 +1,1934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investigator Dashboard - Enhanced</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        /* Header */
+        .header {
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-left h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        
+        .header-left .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .header-right {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        /* Search and Controls Bar */
+        .controls-bar {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .controls-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 12px 40px 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+        
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .search-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            font-size: 20px;
+        }
+        
+        .filter-select {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .filter-select:hover {
+            border-color: #667eea;
+        }
+        
+        .filter-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        
+        .stat-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .stat-icon {
+            font-size: 32px;
+        }
+        
+        .stat-number {
+            font-size: 42px;
+            font-weight: bold;
+            color: #333;
+            line-height: 1;
+        }
+        
+        .stat-number.alert {
+            color: #f44336;
+        }
+        
+        .stat-number.success {
+            color: #4CAF50;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+        
+        /* Section Title */
+        .section-title {
+            color: white;
+            font-size: 24px;
+            margin: 30px 0 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* Subject Cards */
+        .subjects-container {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .subject-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .subject-card:hover {
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+        
+        .subject-main {
+            display: grid;
+            gap: 12px;
+        }
+        
+        .subject-name-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .subject-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .phase-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .phase-badge.screening {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+        
+        .phase-badge.baseline {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+        
+        .phase-badge.intervention {
+            background: #e1f5fe;
+            color: #0277bd;
+        }
+        
+        .phase-badge.followup {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        
+        .subject-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(3, auto);
+            gap: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .meta-item strong {
+            color: #333;
+        }
+        
+        .subject-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        
+        .status-indicator {
+            font-size: 48px;
+            line-height: 1;
+        }
+        
+        .forms-due-badge {
+            background: #ffebee;
+            color: #c62828;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .forms-complete-badge {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        /* Detail View */
+        .detail-view {
+            display: none;
+        }
+        
+        .detail-view.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .back-button {
+            background: white;
+            color: #667eea;
+            border: 2px solid white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        
+        .back-button:hover {
+            background: #667eea;
+            color: white;
+            transform: translateX(-4px);
+        }
+        
+        .detail-header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .detail-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        
+        .detail-header-left h2 {
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .detail-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+        
+        .detail-meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .detail-meta-label {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        
+        .detail-meta-value {
+            font-size: 16px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        /* Phase Transition Button */
+        .phase-transition-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .phase-transition-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* Progress Section */
+        .progress-section {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .progress-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        
+        .progress-bar-container {
+            margin-bottom: 25px;
+        }
+        
+        .progress-bar-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .progress-bar-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+        }
+        
+        .progress-bar-value {
+            font-size: 14px;
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: #f0f0f0;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 6px;
+            transition: width 0.6s ease;
+        }
+        
+        /* Forms Section */
+        .forms-section {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .forms-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .forms-section-header h3 {
+            color: #333;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .forms-count {
+            background: #f5f5f5;
+            color: #666;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .form-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            border-left: 4px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .form-item:hover {
+            background: #f0f0f0;
+            transform: translateX(4px);
+        }
+        
+        .form-item.pending {
+            border-left-color: #f44336;
+        }
+        
+        .form-item.complete {
+            opacity: 0.7;
+            border-left-color: #4CAF50;
+        }
+        
+        .form-item-left {
+            flex: 1;
+        }
+        
+        .form-item-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .form-item-meta {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .form-item-meta.overdue {
+            color: #f44336;
+            font-weight: 600;
+        }
+        
+        .action-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .action-button.primary {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .action-button.primary:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        .action-button.secondary {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .action-button.secondary:hover {
+            background: #1976D2;
+            transform: translateY(-2px);
+        }
+        
+        .action-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h3 {
+            font-size: 24px;
+            color: #333;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        
+        .modal-close:hover {
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        .modal-body {
+            margin-bottom: 25px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            background: white;
+            cursor: pointer;
+        }
+        
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .info-box p {
+            color: #1565c0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .warning-box {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .warning-box p {
+            color: #e65100;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+        
+        .modal-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+        
+        .modal-button.cancel {
+            background: #f5f5f5;
+            color: #666;
+        }
+        
+        .modal-button.cancel:hover {
+            background: #e0e0e0;
+        }
+        
+        .modal-button.confirm {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .modal-button.confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        /* FORM MODAL STYLES - NEW! */
+        .form-modal {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        .form-field-group {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .form-field-group.hidden {
+            display: none;
+        }
+
+        .form-field-group.just-appeared {
+            animation: slideIn 0.3s ease;
+            background: #e8f5e9;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .field-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .required {
+            color: #f44336;
+        }
+
+        .field-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .field-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .field-input.error {
+            border-color: #f44336;
+        }
+
+        .field-help {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .field-error {
+            color: #f44336;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .field-error.visible {
+            display: block;
+        }
+
+        .radio-group, .checkbox-group {
+            margin-top: 10px;
+        }
+
+        .radio-option, .checkbox-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .radio-option:hover, .checkbox-option:hover {
+            background: #f0f0f0;
+        }
+
+        .radio-option input, .checkbox-option input {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .skip-logic-indicator {
+            display: inline-block;
+            background: #2196F3;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
+        .submit-form-button {
+            width: 100%;
+            padding: 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .submit-form-button:hover {
+            background: #45a049;
+        }
+
+        .submit-form-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+        }
+        
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        
+        .empty-state h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .empty-state p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .controls-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .subject-card {
+                grid-template-columns: 1fr;
+            }
+            
+            .subject-meta-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .detail-meta-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <h1>🏥 Investigator Dashboard</h1>
+                <p class="subtitle" id="investigatorName">Loading...</p>
+            </div>
+            <div class="header-right">
+                <span style="color: #666;">🟢 Backend Connected</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Controls Bar -->
+    <div class="controls-bar">
+        <div class="controls-container">
+            <div class="search-box">
+                <input type="text" 
+                       id="searchInput" 
+                       placeholder="🔍 Search subjects by name or ID..." 
+                       onkeyup="filterSubjects()">
+                <span class="search-icon">🔍</span>
+            </div>
+            
+            <select class="filter-select" id="phaseFilter" onchange="filterSubjects()">
+                <option value="all">All Phases</option>
+                <option value="screening">Screening</option>
+                <option value="baseline">Baseline</option>
+                <option value="intervention">Intervention</option>
+                <option value="followup">Follow-up</option>
+            </select>
+            
+            <select class="filter-select" id="statusFilter" onchange="filterSubjects()">
+                <option value="all">All Status</option>
+                <option value="forms_due">Forms Due</option>
+                <option value="complete">All Complete</option>
+            </select>
+            
+            <select class="filter-select" id="sortBy" onchange="sortSubjects()">
+                <option value="forms_due">Sort: Forms Due</option>
+                <option value="name">Sort: Name (A-Z)</option>
+                <option value="study_day">Sort: Study Day</option>
+                <option value="last_visit">Sort: Last Visit</option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- List View -->
+    <div class="container" id="listView">
+        <!-- Stats -->
+        <div class="stats-grid" id="statsGrid">
+            <!-- Will be populated -->
+        </div>
+        
+        <!-- Subjects -->
+        <h2 class="section-title">👥 My Subjects</h2>
+        <div class="subjects-container" id="subjectsContainer">
+            <!-- Will be populated -->
+        </div>
+        
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <div class="empty-state-icon">🔍</div>
+            <h3>No subjects found</h3>
+            <p>Try adjusting your search or filters</p>
+        </div>
+    </div>
+    
+    <!-- Detail View -->
+    <div class="container detail-view" id="detailView">
+        <button class="back-button" onclick="showListView()">
+            ← Back to Subject List
+        </button>
+        
+        <!-- Subject Header -->
+        <div class="detail-header" id="detailHeader">
+            <!-- Will be populated -->
+        </div>
+        
+        <!-- Progress Section -->
+        <div class="progress-section" id="progressSection">
+            <!-- Will be populated -->
+        </div>
+        
+        <!-- Investigator Forms -->
+        <div class="forms-section">
+            <div class="forms-section-header">
+                <h3>📋 Investigator Forms <span class="forms-count" id="invFormsCount">0</span></h3>
+            </div>
+            <div id="investigatorForms">
+                <!-- Will be populated -->
+            </div>
+        </div>
+        
+        <!-- Subject Forms -->
+        <div class="forms-section">
+            <div class="forms-section-header">
+                <h3>📱 Subject Forms (View-Only) <span class="forms-count" id="subjFormsCount">0</span></h3>
+            </div>
+            <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                These forms are completed by the subject. You can view their data once completed.
+            </p>
+            <div id="subjectForms">
+                <!-- Will be populated -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Phase Transition Modal -->
+    <div class="modal-overlay" id="phaseTransitionModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>🔄 Change Phase</h3>
+                <button class="modal-close" onclick="closePhaseModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="info-box">
+                    <p><strong>Current Phase:</strong> <span id="currentPhaseDisplay"></span></p>
+                    <p style="margin-top: 8px;"><strong>Subject:</strong> <span id="transitionSubjectName"></span></p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="newPhase">Select New Phase:</label>
+                    <select id="newPhase">
+                        <option value="">-- Choose Phase --</option>
+                        <option value="screening">Screening</option>
+                        <option value="baseline">Baseline</option>
+                        <option value="intervention">Intervention</option>
+                        <option value="followup">Follow-up</option>
+                    </select>
+                </div>
+                
+                <div class="warning-box" id="phaseWarning" style="display: none;">
+                    <p>⚠️ <strong>Warning:</strong> <span id="phaseWarningText"></span></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-button cancel" onclick="closePhaseModal()">Cancel</button>
+                <button class="modal-button confirm" onclick="confirmPhaseTransition()">Confirm Transition</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FORM COMPLETION MODAL - NEW! -->
+    <div class="modal-overlay" id="formCompletionModal">
+        <div class="form-modal">
+            <div class="modal-header">
+                <h3 id="formModalTitle">📋 Complete Form</h3>
+                <button class="modal-close" onclick="closeFormModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="formModalFields">
+                    <!-- Form fields will be rendered here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-button cancel" onclick="closeFormModal()">Cancel</button>
+                <button class="modal-button confirm" onclick="submitFormCompletion()" id="submitFormBtn">
+                    Save Form
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let allSubjects = [];
+        let filteredSubjects = [];
+        let currentSubjectDetail = null;
+        
+        // Form completion variables
+        let currentFormData = null;
+        let currentFormValues = {};
+        let skipLogicRules = [];
+        let currentCompletedBy = null;
+        
+        // Load dashboard on page load
+        window.addEventListener('load', () => {
+            loadDashboard();
+        });
+        
+        // ========================================
+        // LOAD DASHBOARD DATA
+        // ========================================
+        async function loadDashboard() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/test/investigator-subjects`);
+                if (!response.ok) throw new Error('Failed to fetch');
+                
+                const data = await response.json();
+                
+                // Update header
+                document.getElementById('investigatorName').textContent = 
+                    `${data.investigator_name} • ${data.site_name}`;
+                
+                // Store subjects
+                allSubjects = data.subjects || [];
+                filteredSubjects = [...allSubjects];
+                
+                // Render
+                renderStats();
+                renderSubjects();
+                
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                alert('⚠️ Failed to load dashboard. Please ensure backend is running on port 8000.');
+            }
+        }
+        
+        // ========================================
+        // RENDER STATS
+        // ========================================
+        function renderStats() {
+            const totalSubjects = allSubjects.length;
+            const totalFormsDue = allSubjects.reduce((sum, s) => sum + s.investigator_forms_due, 0);
+            const subjectsNeedAttention = allSubjects.filter(s => s.investigator_forms_due > 0).length;
+            
+            document.getElementById('statsGrid').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <span class="stat-icon">👥</span>
+                    </div>
+                    <div class="stat-number">${totalSubjects}</div>
+                    <div class="stat-label">Total Subjects</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <span class="stat-icon">📋</span>
+                    </div>
+                    <div class="stat-number alert">${totalFormsDue}</div>
+                    <div class="stat-label">Forms Due Today</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <span class="stat-icon">⚠️</span>
+                    </div>
+                    <div class="stat-number">${subjectsNeedAttention}</div>
+                    <div class="stat-label">Need Attention</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <span class="stat-icon">✅</span>
+                    </div>
+                    <div class="stat-number success">${totalSubjects - subjectsNeedAttention}</div>
+                    <div class="stat-label">All Complete</div>
+                </div>
+            `;
+        }
+        
+        // ========================================
+        // RENDER SUBJECTS
+        // ========================================
+        function renderSubjects() {
+            const container = document.getElementById('subjectsContainer');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (filteredSubjects.length === 0) {
+                container.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            container.innerHTML = filteredSubjects.map(subject => {
+                const phaseLower = subject.phase.toLowerCase().replace(/[-\s]/g, '');
+                const statusIcon = subject.investigator_forms_due > 0 ? '🔴' : '✅';
+                
+                return `
+                    <div class="subject-card" onclick="loadSubjectDetail('${subject.subject_id}')">
+                        <div class="subject-main">
+                            <div class="subject-name-row">
+                                <span class="subject-name">${subject.display_name}</span>
+                                <span class="phase-badge ${phaseLower}">${subject.phase}</span>
+                            </div>
+                            <div class="subject-meta-grid">
+                                <div class="meta-item">
+                                    <strong>Study Day:</strong> ${subject.study_day}
+                                </div>
+                                <div class="meta-item">
+                                    <strong>Last Visit:</strong> ${subject.last_visit}
+                                </div>
+                                <div class="meta-item">
+                                    <strong>Code:</strong> ${subject.subject_id}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="subject-actions">
+                            <div class="status-indicator">${statusIcon}</div>
+                            ${subject.investigator_forms_due > 0 ? 
+                                `<div class="forms-due-badge">
+                                    🔴 ${subject.investigator_forms_due} Due
+                                </div>` :
+                                `<div class="forms-complete-badge">✅ Complete</div>`
+                            }
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // ========================================
+        // FILTER SUBJECTS
+        // ========================================
+        function filterSubjects() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const phaseFilter = document.getElementById('phaseFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            filteredSubjects = allSubjects.filter(subject => {
+                const matchesSearch = 
+                    subject.display_name.toLowerCase().includes(searchTerm) ||
+                    subject.subject_id.toLowerCase().includes(searchTerm);
+                
+                const matchesPhase = 
+                    phaseFilter === 'all' || 
+                    subject.phase.toLowerCase() === phaseFilter;
+                
+                let matchesStatus = true;
+                if (statusFilter === 'forms_due') {
+                    matchesStatus = subject.investigator_forms_due > 0;
+                } else if (statusFilter === 'complete') {
+                    matchesStatus = subject.investigator_forms_due === 0;
+                }
+                
+                return matchesSearch && matchesPhase && matchesStatus;
+            });
+            
+            sortSubjects();
+        }
+        
+        // ========================================
+        // SORT SUBJECTS
+        // ========================================
+        function sortSubjects() {
+            const sortBy = document.getElementById('sortBy').value;
+            
+            filteredSubjects.sort((a, b) => {
+                switch (sortBy) {
+                    case 'forms_due':
+                        return b.investigator_forms_due - a.investigator_forms_due;
+                    case 'name':
+                        return a.display_name.localeCompare(b.display_name);
+                    case 'study_day':
+                        return a.study_day - b.study_day;
+                    case 'last_visit':
+                        return new Date(b.last_visit) - new Date(a.last_visit);
+                    default:
+                        return 0;
+                }
+            });
+            
+            renderSubjects();
+        }
+        
+        // ========================================
+        // LOAD SUBJECT DETAIL
+        // ========================================
+        async function loadSubjectDetail(subjectId) {
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/test/subject-detail/${subjectId}`);
+                if (!response.ok) throw new Error('Failed to fetch');
+                
+                const data = await response.json();
+                currentSubjectDetail = data;
+                
+                renderSubjectDetail(data);
+                showDetailView();
+                
+            } catch (error) {
+                console.error('Error loading subject detail:', error);
+                alert('Failed to load subject details');
+            }
+        }
+        
+        // ========================================
+        // RENDER SUBJECT DETAIL
+        // ========================================
+        function renderSubjectDetail(data) {
+            const phaseLower = data.phase.toLowerCase().replace(/[-\s]/g, '');
+            
+            // Header
+            document.getElementById('detailHeader').innerHTML = `
+                <div class="detail-header-top">
+                    <div class="detail-header-left">
+                        <h2>👤 ${data.display_name}</h2>
+                        <span class="phase-badge ${phaseLower}" style="font-size: 14px; padding: 6px 14px;">
+                            ${data.phase}
+                        </span>
+                    </div>
+                    <button class="phase-transition-btn" onclick="openPhaseTransitionModal()">
+                        🔄 Change Phase
+                    </button>
+                </div>
+                
+                <div class="detail-meta-grid">
+                    <div class="detail-meta-item">
+                        <div class="detail-meta-label">Subject Code</div>
+                        <div class="detail-meta-value">${data.subject_code}</div>
+                    </div>
+                    <div class="detail-meta-item">
+                        <div class="detail-meta-label">Study Day</div>
+                        <div class="detail-meta-value">${data.study_day}</div>
+                    </div>
+                    <div class="detail-meta-item">
+                        <div class="detail-meta-label">Current Phase</div>
+                        <div class="detail-meta-value">${data.phase}</div>
+                    </div>
+                    <div class="detail-meta-item">
+                        <div class="detail-meta-label">Last Visit</div>
+                        <div class="detail-meta-value">${data.last_visit || 'N/A'}</div>
+                    </div>
+                </div>
+            `;
+            
+            // Progress
+            const totalForms = data.investigator_forms.length + data.subject_forms.length;
+            const completedForms = data.investigator_forms.filter(f => f.status === 'complete').length +
+                                  data.subject_forms.filter(f => f.status === 'complete').length;
+            const progressPct = totalForms > 0 ? Math.round((completedForms / totalForms) * 100) : 0;
+            
+            document.getElementById('progressSection').innerHTML = `
+                <h3>📊 Overall Progress</h3>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-header">
+                        <div class="progress-bar-label">Total Forms</div>
+                        <div class="progress-bar-value">${completedForms} / ${totalForms} (${progressPct}%)</div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill" style="width: ${progressPct}%"></div>
+                    </div>
+                </div>
+            `;
+            
+            // Investigator Forms
+            const invFormsHtml = data.investigator_forms.map(form => {
+                if (form.status === 'complete') {
+                    return `
+                        <div class="form-item complete">
+                            <div class="form-item-left">
+                                <div class="form-item-title">
+                                    ✅ ${form.form_name}
+                                </div>
+                                <div class="form-item-meta">
+                                    Completed: ${form.completed_date}
+                                </div>
+                            </div>
+                            <button class="action-button secondary" onclick="viewFormData('${form.form_id}')">
+                                View Data
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="form-item pending">
+                            <div class="form-item-left">
+                                <div class="form-item-title">
+                                    📋 ${form.form_name}
+                                </div>
+                                <div class="form-item-meta ${form.status === 'overdue' ? 'overdue' : ''}">
+                                    ${form.status === 'overdue' ? '⚠️ Overdue: ' : 'Due: '} ${form.due_date}
+                                </div>
+                            </div>
+                            <button class="action-button primary" onclick="completeForm('${form.form_id}', 'investigator')">
+                                Complete Form
+                            </button>
+                        </div>
+                    `;
+                }
+            }).join('');
+            
+            document.getElementById('investigatorForms').innerHTML = invFormsHtml || 
+                '<p style="color: #999; text-align: center; padding: 20px;">No investigator forms at this time</p>';
+            
+            document.getElementById('invFormsCount').textContent = data.investigator_forms.length;
+            
+            // Subject Forms
+            const subjFormsHtml = data.subject_forms.map(form => {
+                const statusIcon = form.status === 'complete' ? '✅' : '⏳';
+                return `
+                    <div class="form-item ${form.status === 'complete' ? 'complete' : ''}">
+                        <div class="form-item-left">
+                            <div class="form-item-title">
+                                ${statusIcon} ${form.form_name}
+                            </div>
+                            <div class="form-item-meta">
+                                ${form.status === 'complete' ? 
+                                    `Completed: ${form.completed_date}` : 
+                                    `Due: ${form.due_date}`
+                                }
+                            </div>
+                        </div>
+                        ${form.status === 'complete' ? 
+                            `<button class="action-button secondary" onclick="viewFormData('${form.form_id}')">
+                                View Data
+                            </button>` : 
+                            ''
+                        }
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('subjectForms').innerHTML = subjFormsHtml || 
+                '<p style="color: #999; text-align: center; padding: 20px;">No subject forms available</p>';
+            
+            document.getElementById('subjFormsCount').textContent = data.subject_forms.length;
+        }
+        
+        // ========================================
+        // PHASE TRANSITION MODAL
+        // ========================================
+        async function openPhaseTransitionModal() {
+            if (!currentSubjectDetail) return;
+            
+            const currentPhase = currentSubjectDetail.phase.toLowerCase();
+            
+            document.getElementById('currentPhaseDisplay').textContent = currentSubjectDetail.phase;
+            document.getElementById('transitionSubjectName').textContent = currentSubjectDetail.display_name;
+            document.getElementById('phaseWarning').style.display = 'none';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/phases/rules/1/${currentPhase}`);
+                const data = await response.json();
+                
+                if (data.success && data.allowed_transitions.length > 0) {
+                    const dropdown = document.getElementById('newPhase');
+                    dropdown.innerHTML = '<option value="">-- Choose Phase --</option>';
+                    
+                    data.allowed_transitions.forEach(phase => {
+                        const option = document.createElement('option');
+                        option.value = phase;
+                        option.textContent = phase.charAt(0).toUpperCase() + phase.slice(1);
+                        dropdown.appendChild(option);
+                    });
+                } else {
+                    alert('No valid phase transitions available from current phase');
+                    return;
+                }
+                
+            } catch (error) {
+                console.error('Error loading phase transitions:', error);
+                alert('Failed to load phase transition options');
+                return;
+            }
+            
+            document.getElementById('phaseTransitionModal').classList.add('active');
+        }
+
+        function closePhaseModal() {
+            document.getElementById('phaseTransitionModal').classList.remove('active');
+        }
+        
+        async function confirmPhaseTransition() {
+            const newPhase = document.getElementById('newPhase').value;
+            
+            if (!newPhase) {
+                alert('Please select a new phase');
+                return;
+            }
+            
+            if (!currentSubjectDetail) return;
+            
+            const currentPhase = currentSubjectDetail.phase.toLowerCase();
+            if (currentPhase === newPhase) {
+                alert('Subject is already in this phase');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/phases/transition`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        study_id: 1,
+                        subject_id: currentSubjectDetail.subject_id,
+                        from_phase: currentPhase,
+                        to_phase: newPhase,
+                        transition_day: currentSubjectDetail.study_day,
+                        triggered_by: 'investigator',
+                        investigator_id: 'INV001'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`✅ Phase Transition Successful!\n\nSubject: ${currentSubjectDetail.display_name}\nFrom: ${currentPhase}\nTo: ${newPhase}\nTransition ID: ${result.transition_id}\n\nAudit trail created!`);
+                    currentSubjectDetail.phase = newPhase.charAt(0).toUpperCase() + newPhase.slice(1);
+                    renderSubjectDetail(currentSubjectDetail);
+                    closePhaseModal();
+                    setTimeout(() => loadDashboard(), 500);
+                } else {
+                    alert(`❌ Phase Transition Failed!\n\n${result.error}`);
+                }
+                
+            } catch (error) {
+                console.error('Error executing phase transition:', error);
+                alert('Failed to execute phase transition. Please try again.');
+            }
+        }
+        
+        // ========================================
+        // FORM COMPLETION - COMPLETE IMPLEMENTATION
+        // ========================================
+        async function completeForm(formId, completedBy) {
+            console.log(`📋 Opening form: ${formId} (completed by: ${completedBy})`);
+            
+            currentCompletedBy = completedBy;
+            
+            // For now, load a demo form
+            // In production, this would fetch from backend
+            await loadFormSchema(formId);
+        }
+
+        async function loadFormSchema(formId) {
+            // Demo form with skip logic
+            const demoForm = {
+                form_id: formId,
+                title: "Medical Assessment Form",
+                description: "Complete medical assessment with skip logic",
+                fields: [
+                    {
+                        field_id: 'has_symptoms',
+                        label: 'Are you experiencing any symptoms?',
+                        type: 'radio',
+                        required: true,
+                        options: [
+                            { value: 'yes', label: 'Yes' },
+                            { value: 'no', label: 'No' }
+                        ]
+                    },
+                    {
+                        field_id: 'symptom_details',
+                        label: 'Please describe your symptoms',
+                        type: 'textarea',
+                        required: true,
+                        placeholder: 'Describe symptoms in detail...',
+                        skip_logic: {
+                            show_when: 'has_symptoms',
+                            equals: 'yes'
+                        }
+                    },
+                    {
+                        field_id: 'pain_level',
+                        label: 'Pain level (0-10)',
+                        type: 'number',
+                        required: true,
+                        min: 0,
+                        max: 10,
+                        skip_logic: {
+                            show_when: 'has_symptoms',
+                            equals: 'yes'
+                        }
+                    },
+                    {
+                        field_id: 'vital_signs',
+                        label: 'Record vital signs',
+                        type: 'text',
+                        required: true,
+                        placeholder: 'BP, HR, Temp, etc.'
+                    },
+                    {
+                        field_id: 'notes',
+                        label: 'Additional notes',
+                        type: 'textarea',
+                        required: false,
+                        placeholder: 'Any additional observations...'
+                    }
+                ]
+            };
+
+            currentFormData = demoForm;
+            currentFormValues = {};
+            
+            // Extract skip logic rules
+            skipLogicRules = demoForm.fields
+                .filter(f => f.skip_logic)
+                .map(f => ({
+                    field_id: f.field_id,
+                    show_when: f.skip_logic.show_when,
+                    equals: f.skip_logic.equals
+                }));
+
+            renderFormInModal();
+            document.getElementById('formCompletionModal').classList.add('active');
+        }
+
+        function renderFormInModal() {
+            if (!currentFormData) return;
+
+            document.getElementById('formModalTitle').textContent = `📋 ${currentFormData.title}`;
+
+            const fieldsHtml = currentFormData.fields.map(field => {
+                const isConditional = field.skip_logic ? true : false;
+                const shouldHide = isConditional;
+
+                return `
+                    <div class="form-field-group ${shouldHide ? 'hidden' : ''}" id="field_${field.field_id}">
+                        <label class="field-label">
+                            ${field.label}
+                            ${field.required ? '<span class="required">*</span>' : ''}
+                            ${isConditional ? '<span class="skip-logic-indicator">Conditional</span>' : ''}
+                        </label>
+                        ${renderFieldInput(field)}
+                        ${field.help ? `<div class="field-help">${field.help}</div>` : ''}
+                        <div class="field-error" id="error_${field.field_id}"></div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('formModalFields').innerHTML = fieldsHtml;
+            attachFormEventListeners();
+        }
+
+        function renderFieldInput(field) {
+            switch(field.type) {
+                case 'text':
+                case 'email':
+                case 'tel':
+                case 'number':
+                    return `<input 
+                        type="${field.type}" 
+                        id="${field.field_id}" 
+                        class="field-input"
+                        placeholder="${field.placeholder || ''}"
+                        ${field.required ? 'required' : ''}
+                        ${field.min !== undefined ? `min="${field.min}"` : ''}
+                        ${field.max !== undefined ? `max="${field.max}"` : ''}
+                    />`;
+                
+                case 'textarea':
+                    return `<textarea 
+                        id="${field.field_id}" 
+                        class="field-input"
+                        rows="4"
+                        placeholder="${field.placeholder || ''}"
+                        ${field.required ? 'required' : ''}
+                    ></textarea>`;
+                
+                case 'radio':
+                    return `<div class="radio-group">
+                        ${field.options.map(opt => `
+                            <label class="radio-option">
+                                <input 
+                                    type="radio" 
+                                    name="${field.field_id}" 
+                                    value="${opt.value}"
+                                    ${field.required ? 'required' : ''}
+                                />
+                                <span>${opt.label}</span>
+                            </label>
+                        `).join('')}
+                    </div>`;
+                
+                case 'checkbox':
+                    return `<div class="checkbox-group">
+                        ${field.options.map(opt => `
+                            <label class="checkbox-option">
+                                <input 
+                                    type="checkbox" 
+                                    name="${field.field_id}" 
+                                    value="${opt.value}"
+                                />
+                                <span>${opt.label}</span>
+                            </label>
+            if (field.type === 'radio') {
+                const checked = document.querySelector(`input[name="${fieldId}"]:checked`);
+                value = checked ? checked.value : null;
+            } else if (field.type === 'checkbox') {
+                const checked = Array.from(document.querySelectorAll(`input[name="${fieldId}"]:checked`));
+                value = checked.map(c => c.value);
+            } else {
+                const element = document.getElementById(fieldId);
+                value = element ? element.value : null;
+            }
+
+            currentFormValues[fieldId] = value;
+            evaluateFormSkipLogic();
+        }
+
+        function evaluateFormSkipLogic() {
+            skipLogicRules.forEach(rule => {
+                const triggerValue = currentFormValues[rule.show_when];
+                const shouldShow = triggerValue === rule.equals;
+
+                const fieldElement = document.getElementById(`field_${rule.field_id}`);
+                if (fieldElement) {
+                    if (shouldShow && fieldElement.classList.contains('hidden')) {
+                        fieldElement.classList.remove('hidden');
+                        fieldElement.classList.add('just-appeared');
+                        setTimeout(() => {
+                            fieldElement.classList.remove('just-appeared');
+                        }, 300);
+                    } else if (!shouldShow && !fieldElement.classList.contains('hidden')) {
+                        fieldElement.classList.add('hidden');
+                        const inputElement = document.getElementById(rule.field_id);
+                        if (inputElement) {
+                            inputElement.value = '';
+                            delete currentFormValues[rule.field_id];
+                        }
+                    }
+                }
+            });
+        }
+
+        async function submitFormCompletion() {
+            // Clear previous errors
+            document.querySelectorAll('.field-error').forEach(el => {
+                el.classList.remove('visible');
+            });
+            document.querySelectorAll('.field-input').forEach(el => {
+                el.classList.remove('error');
+            });
+        
+            let hasErrors = false;
+            const errors = [];
+        
+            // Validate only VISIBLE required fields
+            currentFormData.fields.forEach(field => {
+                const fieldContainer = document.getElementById(`field_${field.field_id}`);
+                const isVisible = fieldContainer && !fieldContainer.classList.contains('hidden');
+            
+                if (isVisible && field.required) {
+                    const value = currentFormValues[field.field_id];
+                    const isEmpty = !value || (Array.isArray(value) && value.length === 0) || 
+                                   (typeof value === 'string' && value.trim() === '');
+                
+                    if (isEmpty) {
+                        hasErrors = true;
+                        errors.push({
+                            field_id: field.field_id,
+                            label: field.label,
+                            message: `${field.label} is required`
+                        });
+                    
+                        const errorEl = document.getElementById(`error_${field.field_id}`);
+                        if (errorEl) {
+                            errorEl.textContent = 'This field is required';
+                            errorEl.classList.add('visible');
+                        }
+                    
+                        const inputEl = document.getElementById(field.field_id);
+                        if (inputEl) {
+                            inputEl.classList.add('error');
+                        }
+                    }
+                }
+            });
+        
+            if (hasErrors) {
+                alert(`❌ Please fill in all required fields!\n\nMissing:\n${errors.map(e => `- ${e.label}`).join('\n')}`);
+                const firstError = document.querySelector('.field-error.visible');
+                if (firstError) {
+                    firstError.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                return;
+            }
+        
+            // Disable submit button
+            const submitBtn = document.getElementById('submitFormBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+        
+            try {
+                // Call backend API
+                const response = await fetch(`${API_BASE}/api/v1/forms/submit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        study_id: 1,
+                        subject_id: currentSubjectDetail.subject_id,
+                        form_id: currentFormData.form_id,
+                        form_data: currentFormValues,
+                        completed_by: currentCompletedBy,
+                        investigator_id: currentCompletedBy === 'investigator' ? 'INV001' : null
+                    })
+                });
+            
+                const result = await response.json();
+            
+                if (result.success) {
+                    console.log('✅ Form saved to database!', result);
+                    
+                    alert(`✅ Form Submitted Successfully!\n\n` +
+                          `Form: ${currentFormData.title}\n` +
+                          `Completion ID: ${result.completion_id}\n` +
+                          `Completed by: ${currentCompletedBy}\n\n` +
+                          `Data saved to database!`);
+                
+                    closeFormModal();
+                
+                    // Reload subject detail to show updated status
+                    if (currentSubjectDetail) {
+                        await loadSubjectDetail(currentSubjectDetail.subject_id);
+                    }
+                } else {
+                    throw new Error(result.error || 'Failed to save form');
+                }
+            
+            } catch (error) {
+                console.error('❌ Form submission error:', error);
+                alert(`❌ Failed to save form!\n\nError: ${error.message}\n\nPlease try again.`);
+                
+                // Re-enable submit button
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save Form';
+            }
+        }
+
+            if (hasErrors) {
+                alert(`❌ Please fill in all required fields!\n\nMissing:\n${errors.map(e => `- ${e.label}`).join('\n')}`);
+                const firstError = document.querySelector('.field-error.visible');
+                if (firstError) {
+                    firstError.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                return;
+            }
+
+            // Success! Show submission data
+            const submissionData = {
+                form_id: currentFormData.form_id,
+                form_title: currentFormData.title,
+                completed_by: currentCompletedBy,
+                subject_id: currentSubjectDetail ? currentSubjectDetail.subject_id : 'unknown',
+                submitted_at: new Date().toISOString(),
+                values: currentFormValues
+            };
+
+            alert('✅ Form submitted successfully!\n\nCheck console for full data.');
+            console.log('📋 FORM SUBMISSION DATA:', submissionData);
+
+            closeFormModal();
+
+            // Reload subject detail to update progress
+            if (currentSubjectDetail) {
+                await loadSubjectDetail(currentSubjectDetail.subject_id);
+            }
+        }
+
+        function closeFormModal() {
+            document.getElementById('formCompletionModal').classList.remove('active');
+            currentFormData = null;
+            currentFormValues = {};
+            skipLogicRules = [];
+        }
+        
+        function viewFormData(formId) {
+            alert(`👁️ Viewing Form Data: ${formId}\n\nWould show completed form data in read-only view.`);
+        }
+        
+        // ========================================
+        // VIEW NAVIGATION
+        // ========================================
+        function showDetailView() {
+            document.getElementById('listView').style.display = 'none';
+            document.getElementById('detailView').classList.add('active');
+            window.scrollTo(0, 0);
+        }
+        
+        function showListView() {
+            document.getElementById('detailView').classList.remove('active');
+            document.getElementById('listView').style.display = 'block';
+            window.scrollTo(0, 0);
+        }
+        
+        // Close modals on outside click
+        document.getElementById('phaseTransitionModal').addEventListener('click', (e) => {
+            if (e.target.id === 'phaseTransitionModal') {
+                closePhaseModal();
+            }
+        });
+
+        document.getElementById('formCompletionModal').addEventListener('click', (e) => {
+            if (e.target.id === 'formCompletionModal') {
+                closeFormModal();
+            }
+        });
+    </script>
+</body>
+</html>

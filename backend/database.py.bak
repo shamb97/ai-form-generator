@@ -27,7 +27,6 @@ class Study(Base):
     name = Column(String, nullable=False)
     description = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
-    status = Column(String, default="draft")  # draft, active, archived
     
     # Relationships
     forms = relationship("Form", back_populates="study", cascade="all, delete-orphan")

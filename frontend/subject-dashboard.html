@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subject Portal - My Forms</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        /* Header */
+        .header {
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-left h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        
+        .header-left .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .header-right {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 30px;
+        }
+        
+        /* Welcome Card */
+        .welcome-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .welcome-card h2 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .welcome-card p {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card h3 {
+            color: #666;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .stat-value {
+            color: #333;
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .stat-label {
+            color: #999;
+            font-size: 14px;
+        }
+        
+        /* Forms Section */
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .section-header h2 {
+            color: #333;
+            font-size: 22px;
+        }
+        
+        .badge {
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        /* Form Cards */
+        .forms-grid {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .form-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 25px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .form-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .form-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+        
+        .form-card h3 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        
+        .form-card .form-meta {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-not-started {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-in-progress {
+            background: #cfe2ff;
+            color: #084298;
+        }
+        
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .form-card .btn {
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        /* Progress Section */
+        .progress-section {
+            margin-top: 20px;
+        }
+        
+        .progress-item {
+            margin-bottom: 20px;
+        }
+        
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        /* Modal Overlay */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            animation: fadeIn 0.3s;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* Form Modal */
+        .form-modal {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            animation: slideUp 0.3s;
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Modal Header with Progress */
+        .modal-header {
+            padding: 25px 30px;
+            border-bottom: 2px solid #f0f0f0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            position: relative;
+        }
+        
+        .modal-close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            line-height: 1;
+        }
+        
+        .modal-close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+        
+        .modal-title {
+            font-size: 24px;
+            margin-bottom: 5px;
+            padding-right: 50px; /* Make room for X button */
+        }
+        
+        .form-chain-progress {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .chain-info {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .chain-progress-bar {
+            flex: 1;
+            margin: 0 20px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .chain-progress-fill {
+            height: 100%;
+            background: white;
+            transition: width 0.5s;
+        }
+        
+        .modal-body {
+            padding: 30px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        
+        .modal-footer {
+            padding: 20px 30px;
+            border-top: 2px solid #f0f0f0;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            background: #f9f9f9;
+        }
+        
+        /* Form Fields */
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .field-hidden {
+            display: none;
+        }
+        
+        /* Success Message */
+        .success-animation {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .success-animation .checkmark {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #4CAF50;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: scaleIn 0.5s;
+        }
+        
+        @keyframes scaleIn {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        .success-animation .checkmark::after {
+            content: '✓';
+            color: white;
+            font-size: 48px;
+            font-weight: bold;
+        }
+        
+        .success-animation h3 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .success-animation p {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .empty-state h3 {
+            color: #666;
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .empty-state p {
+            color: #999;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <h1>📋 Subject Portal</h1>
+                <p class="subtitle">Welcome, <span id="subjectName">Subject</span>!</p>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-secondary" onclick="window.location.href='login.html'">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Welcome Card -->
+        <div class="welcome-card">
+            <h2>Welcome to Your Study Portal</h2>
+            <p>Complete your forms below. Your responses help advance clinical research!</p>
+            
+            <!-- Designer Settings Panel (HIDDEN BY DEFAULT - Press Ctrl+Shift+D to toggle for demo) -->
+            <div id="designerSettings" style="display: none; margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 2px dashed #667eea;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="color: #667eea; margin: 0;">🎨 Designer Settings (Demo Panel)</h3>
+                    <button onclick="toggleDesignerSettings()" style="padding: 5px 10px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        ✕ Hide
+                    </button>
+                </div>
+                <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                    <em>⌨️ These settings would be configured by the INVESTIGATOR/DESIGNER in the study setup. Press Ctrl+Shift+D to toggle this panel.</em>
+                </p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #333;">
+                            Form Presentation:
+                        </label>
+                        <select id="settingPresentation" onchange="updateSettings()" style="width: 100%; padding: 8px; border: 2px solid #e0e0e0; border-radius: 6px;">
+                            <option value="daisy-chain">🔗 Daisy-Chain (one-by-one)</option>
+                            <option value="show-all">📋 Show All Buttons</option>
+                        </select>
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            Daisy-chain: Forms load automatically after submission<br>
+                            Show-all: User can pick any form to complete
+                        </small>
+                    </div>
+                    
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #333;">
+                            Partial Saves:
+                        </label>
+                        <select id="settingPartialSaves" onchange="updateSettings()" style="width: 100%; padding: 8px; border: 2px solid #e0e0e0; border-radius: 6px;">
+                            <option value="true">✅ Allowed (Save & Exit button)</option>
+                            <option value="false">🚫 Disabled (Must complete)</option>
+                        </select>
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            When enabled, subjects can save progress and resume later
+                        </small>
+                    </div>
+                </div>
+                
+                <button onclick="testSettings()" style="margin-top: 15px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                    🔄 Apply Settings & Reload Forms
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Forms Due Today</h3>
+                <div class="stat-value" id="formsDueCount">0</div>
+                <div class="stat-label">Complete your daily forms</div>
+            </div>
+            
+            <div class="stat-card">
+                <h3>Overall Progress</h3>
+                <div class="stat-value" id="overallProgress">0%</div>
+                <div class="stat-label">Total completion rate</div>
+            </div>
+            
+            <div class="stat-card">
+                <h3>Current Phase</h3>
+                <div class="stat-value" id="currentPhase">-</div>
+                <div class="stat-label">Study phase status</div>
+            </div>
+        </div>
+
+        <!-- Forms Due Today -->
+        <div class="section">
+            <div class="section-header">
+                <h2>📝 My Forms Due Today</h2>
+                <span class="badge" id="formsBadge">0 forms</span>
+            </div>
+            <div class="forms-grid" id="formsGrid">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading your forms...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="section">
+            <div class="section-header">
+                <h2>📊 My Progress</h2>
+            </div>
+            <div class="progress-section">
+                <div class="progress-item">
+                    <div class="progress-label">
+                        <span>Overall Progress</span>
+                        <span id="overallProgressText">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="overallProgressBar" style="width: 0%">0%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Modal -->
+    <div class="modal-overlay" id="formModal" onclick="handleOverlayClick(event)">
+        <div class="form-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <button class="modal-close-btn" onclick="handleModalClose()" title="Close">×</button>
+                <h2 class="modal-title" id="modalTitle">Complete Form</h2>
+                <div class="form-chain-progress" id="chainProgress" style="display: none;">
+                    <div class="chain-info">
+                        <span id="currentFormNumber">1</span> of <span id="totalFormsNumber">5</span>
+                    </div>
+                    <div class="chain-progress-bar">
+                        <div class="chain-progress-fill" id="chainProgressFill" style="width: 20%"></div>
+                    </div>
+                    <div class="chain-info">
+                        <span id="chainPercentage">20%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading form...</p>
+                </div>
+            </div>
+            <div class="modal-footer" id="modalFooter">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-secondary" onclick="saveAndExit()" style="background: #FFA500; color: white; border-color: #FFA500;">💾 Save & Exit</button>
+                <button class="btn btn-primary" id="submitBtn" onclick="submitCurrentForm()">Submit Form</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE = 'http://localhost:8000';
+        const SUBJECT_ID = 'subject_001'; // In production, get from login
+        const STUDY_ID = 1; // Changed to integer! In production, get from enrollment
+        // NOTE: If no study exists, demo forms will load automatically
+        
+        // ============================================================================
+        // DESIGNER CONFIGURATION SETTINGS
+        // These settings would be fetched from the study configuration in production
+        // They allow the study designer to control the subject experience
+        // ============================================================================
+        const STUDY_SETTINGS = {
+            // Should forms be presented one-by-one (daisy-chain) or show all buttons?
+            // Options: 'daisy-chain', 'show-all'
+            form_presentation: 'daisy-chain',  // Designer can change this!
+            
+            // Can subjects save partial progress and exit?
+            // Options: true, false
+            allow_partial_saves: true,  // Designer can change this!
+            
+            // Should we auto-save progress even if user doesn't click "Save & Exit"?
+            // Options: true, false
+            auto_save_progress: false,  // Designer can change this!
+            
+            // What happens when user clicks Cancel without saving (if partial saves disabled)?
+            // Options: 'warn', 'silent-discard'
+            cancel_behavior: 'warn'
+        };
+        
+        // ============================================================================
+        // END CONFIGURATION
+        // ============================================================================
+
+        // Global State
+        let allForms = [];
+        let formsQueue = []; // For daisy-chaining
+        let currentFormIndex = 0;
+        let currentForm = null;
+        let completedForms = [];
+        let partialFormData = {}; // Store partial progress
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPartialFormData();
+            loadSubjectData();
+            initializeSettingsPanel();
+            
+            // Add keyboard shortcut listener (Ctrl+Shift+D for Designer settings)
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+                    e.preventDefault();
+                    toggleDesignerSettings();
+                }
+            });
+        });
+        
+        // Toggle designer settings panel
+        function toggleDesignerSettings() {
+            const panel = document.getElementById('designerSettings');
+            if (panel.style.display === 'none') {
+                panel.style.display = 'block';
+                console.log('🎨 Designer Settings Panel shown (Ctrl+Shift+D to hide)');
+            } else {
+                panel.style.display = 'none';
+                console.log('🎨 Designer Settings Panel hidden (Ctrl+Shift+D to show)');
+            }
+        }
+        
+        // Initialize settings panel with current values
+        function initializeSettingsPanel() {
+            document.getElementById('settingPresentation').value = STUDY_SETTINGS.form_presentation;
+            document.getElementById('settingPartialSaves').value = STUDY_SETTINGS.allow_partial_saves.toString();
+        }
+        
+        // Update settings when changed
+        function updateSettings() {
+            STUDY_SETTINGS.form_presentation = document.getElementById('settingPresentation').value;
+            STUDY_SETTINGS.allow_partial_saves = document.getElementById('settingPartialSaves').value === 'true';
+            
+            console.log('Settings updated:', STUDY_SETTINGS);
+        }
+        
+        // Test settings by reloading forms
+        function testSettings() {
+            updateSettings();
+            renderForms(); // Re-render with new settings
+            alert('✅ Settings applied! Try opening a form to see the changes.');
+        }
+        
+        // Load partial form data from localStorage
+        function loadPartialFormData() {
+            const saved = localStorage.getItem(`partial_forms_${SUBJECT_ID}`);
+            if (saved) {
+                try {
+                    partialFormData = JSON.parse(saved);
+                } catch (e) {
+                    partialFormData = {};
+                }
+            }
+        }
+        
+        // Save partial form data to localStorage
+        function savePartialFormData() {
+            localStorage.setItem(`partial_forms_${SUBJECT_ID}`, JSON.stringify(partialFormData));
+        }
+        
+        // Check if form has partial data
+        function hasPartialData(formId) {
+            return partialFormData.hasOwnProperty(formId);
+        }
+        
+        // Get partial data for form
+        function getPartialData(formId) {
+            return partialFormData[formId] || null;
+        }
+        
+        // Save current form data as partial
+        function saveCurrentFormAsPartial() {
+            if (!currentForm) return;
+            
+            const form = document.getElementById('dynamicForm');
+            if (!form) return;
+            
+            const formData = new FormData(form);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                if (value) { // Only save non-empty values
+                    data[key] = value;
+                }
+            }
+            
+            if (Object.keys(data).length > 0) {
+                partialFormData[currentForm.id || currentForm.form_id] = data;
+                savePartialFormData();
+            }
+        }
+        
+        // Clear partial data for a form
+        function clearPartialData(formId) {
+            delete partialFormData[formId];
+            savePartialFormData();
+        }
+
+        // Load all subject data
+        async function loadSubjectData() {
+            try {
+                // Load forms
+                await loadForms();
+                
+                // Load completions
+                await loadCompletions();
+                
+                // Calculate progress
+                updateProgress();
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showError('Failed to load your forms. Please refresh the page.');
+            }
+        }
+
+        // Load forms for the study
+        async function loadForms() {
+            try {
+                console.log('Loading forms for study:', STUDY_ID);
+                const response = await fetch(`${API_BASE}/api/v1/forms/${STUDY_ID}`);
+                
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        console.warn('Study not found, using demo data');
+                        loadDemoForms();
+                        return;
+                    }
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Forms data received:', data);
+                
+                // Handle different response formats
+                allForms = data.forms || data.data || data || [];
+                
+                // If no forms found, use demo data
+                if (!Array.isArray(allForms) || allForms.length === 0) {
+                    console.warn('No forms in response, using demo data');
+                    loadDemoForms();
+                    return;
+                }
+                
+                renderForms();
+            } catch (error) {
+                console.error('Error loading forms:', error);
+                console.warn('Falling back to demo data');
+                loadDemoForms();
+            }
+        }
+        
+        // Load demo forms for testing
+        function loadDemoForms() {
+            allForms = [
+                {
+                    id: 'demo_pain_assessment',
+                    form_id: 'demo_pain_assessment',
+                    name: 'Daily Pain Assessment',
+                    description: 'Rate your pain levels for today',
+                    schema: {
+                        fields: [
+                            {
+                                name: 'pain_level',
+                                label: 'Current Pain Level (0-10)',
+                                type: 'number',
+                                required: true,
+                                placeholder: 'Enter number from 0 (no pain) to 10 (worst pain)'
+                            },
+                            {
+                                name: 'pain_location',
+                                label: 'Pain Location',
+                                type: 'select',
+                                required: true,
+                                options: [
+                                    { value: 'head', label: 'Head' },
+                                    { value: 'back', label: 'Back' },
+                                    { value: 'legs', label: 'Legs' },
+                                    { value: 'arms', label: 'Arms' },
+                                    { value: 'other', label: 'Other' }
+                                ]
+                            },
+                            {
+                                name: 'notes',
+                                label: 'Additional Notes',
+                                type: 'textarea',
+                                required: false,
+                                placeholder: 'Any additional information about your pain...'
+                            }
+                        ]
+                    }
+                },
+                {
+                    id: 'demo_mood_diary',
+                    form_id: 'demo_mood_diary',
+                    name: 'Mood Diary',
+                    description: 'Track your mood and energy levels',
+                    schema: {
+                        fields: [
+                            {
+                                name: 'mood',
+                                label: 'Overall Mood Today',
+                                type: 'select',
+                                required: true,
+                                options: [
+                                    { value: 'excellent', label: '😊 Excellent' },
+                                    { value: 'good', label: '🙂 Good' },
+                                    { value: 'neutral', label: '😐 Neutral' },
+                                    { value: 'poor', label: '😔 Poor' },
+                                    { value: 'very_poor', label: '😢 Very Poor' }
+                                ]
+                            },
+                            {
+                                name: 'energy_level',
+                                label: 'Energy Level (1-5)',
+                                type: 'radio',
+                                required: true,
+                                options: [
+                                    { value: '1', label: '1 - Very Low' },
+                                    { value: '2', label: '2 - Low' },
+                                    { value: '3', label: '3 - Moderate' },
+                                    { value: '4', label: '4 - High' },
+                                    { value: '5', label: '5 - Very High' }
+                                ]
+                            },
+                            {
+                                name: 'sleep_quality',
+                                label: 'Sleep Quality Last Night',
+                                type: 'select',
+                                required: true,
+                                options: [
+                                    { value: 'excellent', label: 'Excellent' },
+                                    { value: 'good', label: 'Good' },
+                                    { value: 'fair', label: 'Fair' },
+                                    { value: 'poor', label: 'Poor' }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    id: 'demo_medication_log',
+                    form_id: 'demo_medication_log',
+                    name: 'Medication Log',
+                    description: 'Record your daily medication',
+                    schema: {
+                        fields: [
+                            {
+                                name: 'took_medication',
+                                label: 'Did you take your medication today?',
+                                type: 'radio',
+                                required: true,
+                                options: [
+                                    { value: 'yes', label: 'Yes' },
+                                    { value: 'no', label: 'No' }
+                                ]
+                            },
+                            {
+                                name: 'time_taken',
+                                label: 'What time did you take it?',
+                                type: 'text',
+                                required: false,
+                                placeholder: 'e.g., 8:00 AM'
+                            },
+                            {
+                                name: 'side_effects',
+                                label: 'Any side effects?',
+                                type: 'textarea',
+                                required: false,
+                                placeholder: 'Describe any side effects you experienced...'
+                            }
+                        ]
+                    }
+                }
+            ];
+            
+            renderForms();
+        }
+
+        // Load completed forms
+        async function loadCompletions() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/forms/completions/${SUBJECT_ID}`);
+                if (!response.ok) {
+                    completedForms = [];
+                    return;
+                }
+                
+                const data = await response.json();
+                completedForms = data.completions || [];
+            } catch (error) {
+                console.error('Error loading completions:', error);
+                completedForms = [];
+            }
+        }
+
+        // Render forms list
+        function renderForms() {
+            const grid = document.getElementById('formsGrid');
+            
+            if (allForms.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <h3>No Forms Available</h3>
+                        <p>You don't have any forms assigned yet. Check back later!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Filter forms due today (for demo, show all)
+            const formsDue = allForms.filter(form => !isFormCompleted(form.id));
+            
+            // Update badge
+            document.getElementById('formsBadge').textContent = `${formsDue.length} forms`;
+            document.getElementById('formsDueCount').textContent = formsDue.length;
+
+            if (formsDue.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎉</div>
+                        <h3>All Caught Up!</h3>
+                        <p>You've completed all your forms for today. Great job!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Render form cards
+            const showAllButtons = STUDY_SETTINGS.form_presentation === 'show-all';
+            
+            grid.innerHTML = formsDue.map((form, index) => {
+                const formId = form.id || form.form_id;
+                const isInProgress = hasPartialData(formId);
+                const statusClass = isInProgress ? 'status-in-progress' : 'status-not-started';
+                const statusText = isInProgress ? 'In Progress' : 'Not Started';
+                const buttonText = isInProgress ? '▶️ Resume Form' : 
+                                  showAllButtons ? 'Complete Form' : 
+                                  index === 0 ? '🚀 Start First Form' : 'Complete Form';
+                
+                return `
+                    <div class="form-card" onclick="startFormChain(${index})">
+                        <div class="form-card-header">
+                            <div>
+                                <h3>${form.name || form.form_name || 'Untitled Form'}</h3>
+                                <div class="form-meta">
+                                    ${form.description || 'Complete this form as part of your study participation'}
+                                    ${isInProgress ? '<br><strong style="color: #084298;">📝 You have saved progress on this form</strong>' : ''}
+                                    ${!showAllButtons && index === 0 ? '<br><strong style="color: #667eea;">👉 Start here - other forms will follow!</strong>' : ''}
+                                </div>
+                            </div>
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        </div>
+                        <button class="btn btn-primary" onclick="event.stopPropagation(); startFormChain(${index})">
+                            ${buttonText}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Check if form is completed
+        function isFormCompleted(formId) {
+            return completedForms.some(c => c.form_id === formId);
+        }
+
+        // Start form chain (daisy-chaining!)
+        function startFormChain(startIndex = 0) {
+            const useDaisyChain = STUDY_SETTINGS.form_presentation === 'daisy-chain';
+            
+            // Build queue of uncompleted forms
+            const uncompletedForms = allForms.filter(form => !isFormCompleted(form.id || form.form_id));
+            
+            if (useDaisyChain) {
+                // DAISY-CHAIN MODE: Queue all forms starting from clicked one
+                formsQueue = [
+                    uncompletedForms[startIndex],
+                    ...uncompletedForms.slice(0, startIndex),
+                    ...uncompletedForms.slice(startIndex + 1)
+                ];
+            } else {
+                // SHOW-ALL MODE: Only queue the clicked form
+                formsQueue = [uncompletedForms[startIndex]];
+            }
+            
+            currentFormIndex = 0;
+            
+            // Show chain progress only in daisy-chain mode with multiple forms
+            const chainProgressEl = document.getElementById('chainProgress');
+            if (useDaisyChain && formsQueue.length > 1) {
+                chainProgressEl.style.display = 'flex';
+            } else {
+                chainProgressEl.style.display = 'none';
+            }
+            
+            console.log('Starting form queue:', {
+                mode: useDaisyChain ? 'daisy-chain' : 'show-all',
+                queueLength: formsQueue.length,
+                forms: formsQueue.map(f => f.name || f.form_name)
+            });
+            
+            // Load first form
+            loadFormInModal(formsQueue[0]);
+        }
+
+        // Load form in modal
+        function loadFormInModal(form) {
+            currentForm = form;
+            
+            console.log('📋 Loading form in modal:', form.name || form.form_name);
+            
+            // Update modal title
+            document.getElementById('modalTitle').textContent = form.name || form.form_name || 'Complete Form';
+            
+            // Update chain progress
+            const useDaisyChain = STUDY_SETTINGS.form_presentation === 'daisy-chain';
+            const chainProgress = document.getElementById('chainProgress');
+            
+            console.log('Chain settings:', {
+                useDaisyChain,
+                queueLength: formsQueue.length,
+                currentIndex: currentFormIndex
+            });
+            
+            if (useDaisyChain && formsQueue.length > 1) {
+                chainProgress.style.display = 'flex';
+                const progress = ((currentFormIndex + 1) / formsQueue.length) * 100;
+                document.getElementById('currentFormNumber').textContent = currentFormIndex + 1;
+                document.getElementById('totalFormsNumber').textContent = formsQueue.length;
+                document.getElementById('chainProgressFill').style.width = `${progress}%`;
+                document.getElementById('chainPercentage').textContent = `${Math.round(progress)}%`;
+            } else {
+                chainProgress.style.display = 'none';
+            }
+            
+            // Render form fields FIRST
+            renderFormFields(form);
+            
+            // THEN Update modal footer buttons based on settings
+            const modalFooter = document.getElementById('modalFooter');
+            const allowPartialSaves = STUDY_SETTINGS.allow_partial_saves;
+            
+            console.log('Setting up modal footer. Partial saves allowed:', allowPartialSaves);
+            
+            // ALWAYS show footer
+            modalFooter.style.display = 'flex';
+            
+            if (allowPartialSaves) {
+                // Show Save & Exit button
+                modalFooter.innerHTML = `
+                    <button class="btn btn-secondary" onclick="handleModalClose()">Cancel</button>
+                    <button class="btn btn-secondary" onclick="saveAndExit()" style="background: #FFA500; color: white; border-color: #FFA500;">💾 Save & Exit</button>
+                    <button class="btn btn-primary" id="submitBtn" onclick="submitCurrentForm()">Submit Form</button>
+                `;
+            } else {
+                // No Save & Exit - just Cancel and Submit
+                modalFooter.innerHTML = `
+                    <button class="btn btn-secondary" onclick="handleModalClose()">Cancel</button>
+                    <button class="btn btn-primary" id="submitBtn" onclick="submitCurrentForm()">Submit Form</button>
+                `;
+            }
+            
+            console.log('✅ Modal footer buttons added');
+            console.log('Submit button exists:', document.getElementById('submitBtn') !== null);
+            
+            // Show modal
+            document.getElementById('formModal').classList.add('active');
+        }
+
+        // Render form fields
+        function renderFormFields(form) {
+            const modalBody = document.getElementById('modalBody');
+            const schema = form.schema || form;
+            const fields = schema.fields || [];
+
+            if (fields.length === 0) {
+                modalBody.innerHTML = `
+                    <div class="empty-state">
+                        <p>This form has no fields configured yet.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const formId = form.id || form.form_id;
+            const savedData = getPartialData(formId);
+
+            let html = '<form id="dynamicForm">';
+            
+            fields.forEach((field, index) => {
+                const fieldName = field.name;
+                const savedValue = savedData ? savedData[fieldName] : null;
+                
+                html += `<div class="form-group" id="field-${index}" data-field-id="${field.id || field.name}">`;
+                html += `<label for="input-${index}">${field.label || field.name}`;
+                if (field.required) html += ' <span style="color: red;">*</span>';
+                html += '</label>';
+
+                switch (field.type) {
+                    case 'text':
+                    case 'email':
+                    case 'number':
+                        html += `<input type="${field.type}" id="input-${index}" name="${field.name}" 
+                                ${field.required ? 'required' : ''} 
+                                ${field.placeholder ? `placeholder="${field.placeholder}"` : ''}
+                                ${savedValue ? `value="${savedValue}"` : ''}>`;
+                        break;
+                    case 'textarea':
+                        html += `<textarea id="input-${index}" name="${field.name}" 
+                                ${field.required ? 'required' : ''}
+                                ${field.placeholder ? `placeholder="${field.placeholder}"` : ''}>${savedValue || ''}</textarea>`;
+                        break;
+                    case 'select':
+                        html += `<select id="input-${index}" name="${field.name}" ${field.required ? 'required' : ''}>`;
+                        html += '<option value="">Select an option</option>';
+                        (field.options || []).forEach(opt => {
+                            const optValue = opt.value || opt;
+                            const isSelected = savedValue === optValue ? 'selected' : '';
+                            html += `<option value="${optValue}" ${isSelected}>${opt.label || opt}</option>`;
+                        });
+                        html += '</select>';
+                        break;
+                    case 'radio':
+                        (field.options || []).forEach((opt, i) => {
+                            const optValue = opt.value || opt;
+                            const isChecked = savedValue === optValue ? 'checked' : '';
+                            html += `
+                                <div style="margin: 8px 0;">
+                                    <input type="radio" id="input-${index}-${i}" name="${field.name}" 
+                                           value="${optValue}" ${field.required ? 'required' : ''} ${isChecked}>
+                                    <label for="input-${index}-${i}" style="display: inline; margin-left: 8px; font-weight: normal;">
+                                        ${opt.label || opt}
+                                    </label>
+                                </div>
+                            `;
+                        });
+                        break;
+                }
+
+                html += '</div>';
+            });
+
+            html += '</form>';
+            
+            if (savedData) {
+                html += '<div style="background: #cfe2ff; padding: 15px; border-radius: 8px; margin-top: 20px; color: #084298;">';
+                html += '📝 <strong>Resumed from saved progress</strong> - Your previous answers have been loaded.';
+                html += '</div>';
+            }
+            
+            modalBody.innerHTML = html;
+
+            // Add event listeners for skip logic (if needed)
+            addFormEventListeners();
+        }
+        
+        // Save and Exit function
+        function saveAndExit() {
+            // Save current form data
+            saveCurrentFormAsPartial();
+            
+            // Show confirmation
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `
+                <div class="success-animation">
+                    <div class="checkmark" style="background: #FFA500;">💾</div>
+                    <h3>Progress Saved!</h3>
+                    <p>Your answers have been saved. You can resume this form later.</p>
+                </div>
+            `;
+            
+            // Hide footer temporarily
+            document.getElementById('modalFooter').style.display = 'none';
+            
+            // Close modal after short delay
+            setTimeout(() => {
+                closeModal();
+                renderForms(); // Refresh to show "In Progress" status
+            }, 1500);
+        }
+
+        // Add form event listeners
+        function addFormEventListeners() {
+            const form = document.getElementById('dynamicForm');
+            if (!form) return;
+
+            const inputs = form.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                input.addEventListener('change', handleFieldChange);
+                input.addEventListener('input', handleFieldChange);
+            });
+        }
+
+        // Handle field change (for skip logic)
+        function handleFieldChange(event) {
+            // Placeholder for skip logic
+            // In production, evaluate skip logic rules here
+            console.log('Field changed:', event.target.name, event.target.value);
+        }
+
+        // Submit current form
+        async function submitCurrentForm() {
+            console.log('=== SUBMIT BUTTON CLICKED ===');
+            console.log('Current form:', currentForm);
+            
+            try {
+                const form = document.getElementById('dynamicForm');
+                if (!form) {
+                    console.error('ERROR: Dynamic form not found!');
+                    alert('Error: Form not found. Please close and try again.');
+                    return;
+                }
+
+                console.log('Form found, checking validity...');
+
+                // Validate required fields
+                if (!form.checkValidity()) {
+                    console.log('Form validation failed');
+                    form.reportValidity();
+                    return;
+                }
+
+                console.log('Form is valid, collecting data...');
+
+                // Collect form data
+                const formData = new FormData(form);
+                const data = {};
+                for (let [key, value] of formData.entries()) {
+                    data[key] = value;
+                }
+
+                console.log('Form data collected:', data);
+
+                // Show loading
+                const submitBtn = document.getElementById('submitBtn');
+                const originalText = submitBtn.textContent;
+                submitBtn.textContent = 'Submitting...';
+                submitBtn.disabled = true;
+
+                console.log('Submitting to backend...');
+                console.log('Payload:', {
+                    study_id: STUDY_ID,
+                    subject_id: SUBJECT_ID,
+                    form_id: currentForm.id || currentForm.form_id,
+                    completed_by: SUBJECT_ID,
+                    completion_data: data
+                });
+
+                // Submit to backend
+                const response = await fetch(`${API_BASE}/api/v1/forms/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        study_id: STUDY_ID,
+                        subject_id: SUBJECT_ID,
+                        form_id: currentForm.id || currentForm.form_id,
+                        completed_by: SUBJECT_ID,
+                        form_data: data  // Changed from completion_data to form_data!
+                    })
+                });
+
+                console.log('Response status:', response.status);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Response error:', errorText);
+                    throw new Error(`Failed to submit form: ${response.status} - ${errorText}`);
+                }
+
+                const result = await response.json();
+                console.log('Submit successful!', result);
+
+                // Success! Mark as completed
+                completedForms.push({
+                    form_id: currentForm.id || currentForm.form_id,
+                    form_data: data  // Changed from completion_data to form_data
+                });
+                
+                console.log('Updated completedForms:', completedForms);
+                
+                // Clear partial data for this form
+                clearPartialData(currentForm.id || currentForm.form_id);
+
+                // Show success animation
+                await showSuccessAnimation();
+
+                // Reset button
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+
+                console.log('Current form index:', currentFormIndex, 'Queue length:', formsQueue.length);
+
+                // DAISY CHAIN: Load next form or close
+                currentFormIndex++;
+                if (currentFormIndex < formsQueue.length) {
+                    // Load next form!
+                    console.log('Loading next form in chain...');
+                    setTimeout(() => {
+                        loadFormInModal(formsQueue[currentFormIndex]);
+                    }, 500);
+                } else {
+                    // All done! Close modal and refresh
+                    console.log('All forms in chain completed!');
+                    setTimeout(() => {
+                        closeModal();
+                        loadSubjectData(); // Refresh data
+                    }, 1500);
+                }
+
+            } catch (error) {
+                console.error('=== SUBMIT ERROR ===');
+                console.error('Error details:', error);
+                console.error('Error stack:', error.stack);
+                alert(`Failed to submit form: ${error.message}\n\nCheck browser console for details.`);
+                
+                // Reset button
+                const submitBtn = document.getElementById('submitBtn');
+                if (submitBtn) {
+                    submitBtn.textContent = 'Submit Form';
+                    submitBtn.disabled = false;
+                }
+            }
+        }
+
+        // Show success animation
+        function showSuccessAnimation() {
+            return new Promise(resolve => {
+                const modalBody = document.getElementById('modalBody');
+                const modalFooter = document.getElementById('modalFooter');
+                
+                modalBody.innerHTML = `
+                    <div class="success-animation">
+                        <div class="checkmark"></div>
+                        <h3>Form Submitted!</h3>
+                        <p>Thank you for completing this form.</p>
+                        ${currentFormIndex < formsQueue.length - 1 ? 
+                            '<p style="margin-top: 15px; color: #667eea; font-weight: 600;">Loading next form...</p>' : 
+                            '<p style="margin-top: 15px; color: #4CAF50; font-weight: 600;">All forms completed! 🎉</p>'
+                        }
+                    </div>
+                `;
+                
+                // Hide footer during success animation
+                modalFooter.style.display = 'none';
+                
+                console.log('✅ Success animation shown, footer hidden temporarily');
+                
+                setTimeout(() => {
+                    console.log('Success animation complete, resolving promise');
+                    resolve();
+                }, 1500);
+            });
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('formModal').classList.remove('active');
+            document.getElementById('modalFooter').style.display = 'flex';
+            formsQueue = [];
+            currentFormIndex = 0;
+            currentForm = null;
+        }
+        
+        // Close modal with warning (when partial saves disabled)
+        function closeModalWithWarning() {
+            const cancelBehavior = STUDY_SETTINGS.cancel_behavior;
+            
+            if (cancelBehavior === 'warn') {
+                const confirmed = confirm(
+                    '⚠️ Partial saves are disabled for this study.\n\n' +
+                    'If you cancel now, any data you entered will be lost.\n\n' +
+                    'Are you sure you want to cancel?'
+                );
+                
+                if (!confirmed) {
+                    return; // User chose to stay
+                }
+            }
+            
+            // User confirmed or silent discard - close modal
+            closeModal();
+        }
+        
+        // Handle modal close (X button or ESC key)
+        function handleModalClose() {
+            const allowPartialSaves = STUDY_SETTINGS.allow_partial_saves;
+            
+            if (allowPartialSaves) {
+                // If partial saves allowed, just close (same as Cancel button)
+                closeModal();
+            } else {
+                // If partial saves disabled, warn user
+                closeModalWithWarning();
+            }
+        }
+        
+        // Handle clicking outside modal (on overlay)
+        function handleOverlayClick(event) {
+            // Only close if clicking directly on overlay (not on modal content)
+            if (event.target.id === 'formModal') {
+                handleModalClose();
+            }
+        }
+        
+        // Add ESC key listener to close modal
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('formModal');
+                if (modal.classList.contains('active')) {
+                    handleModalClose();
+                }
+            }
+        });
+
+        // Update progress
+        function updateProgress() {
+            const total = allForms.length;
+            const completed = completedForms.length;
+            const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+            console.log('Progress Update:', {
+                total,
+                completed,
+                percentage,
+                allForms: allForms.map(f => f.id || f.form_id),
+                completedForms: completedForms.map(c => c.form_id)
+            });
+
+            document.getElementById('overallProgress').textContent = `${percentage}%`;
+            document.getElementById('overallProgressText').textContent = `${completed}/${total} forms (${percentage}%)`;
+            document.getElementById('overallProgressBar').style.width = `${percentage}%`;
+            document.getElementById('overallProgressBar').textContent = `${percentage}%`;
+        }
+
+        // Show error
+        function showError(message) {
+            const grid = document.getElementById('formsGrid');
+            grid.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">⚠️</div>
+                    <h3>Error Loading Forms</h3>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

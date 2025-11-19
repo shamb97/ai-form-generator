@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Designer Dashboard</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+        
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-group small {
+            display: block;
+            color: #666;
+            margin-top: 5px;
+            font-size: 13px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .forms-list {
+            border: 2px dashed #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            min-height: 100px;
+        }
+        
+        .form-item {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+        
+        .form-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+        
+        .form-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .form-item-header h3 {
+            color: #333;
+            font-size: 18px;
+            margin: 0;
+        }
+        
+        .form-item-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+        
+        .calendar {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .calendar-day {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+        
+        .calendar-day:hover {
+            border-color: #667eea;
+            transform: translateX(5px);
+        }
+        
+        .calendar-day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .calendar-day-number {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 18px;
+        }
+        
+        .calendar-day-count {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .calendar-forms {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .form-badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .form-badge-1 { background: #ffebee; color: #c62828; }
+        .form-badge-2 { background: #e3f2fd; color: #1565c0; }
+        .form-badge-3 { background: #e8f5e9; color: #2e7d32; }
+        .form-badge-4 { background: #fff3e0; color: #e65100; }
+        .form-badge-5 { background: #f3e5f5; color: #6a1b9a; }
+        
+        .settings-group {
+            margin-bottom: 20px;
+        }
+        
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .checkbox-label:hover {
+            background: #e9ecef;
+        }
+        
+        .checkbox-label input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .success-message {
+            background: #d4edda;
+            border: 2px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .success-message.show {
+            display: block;
+            animation: slideDown 0.3s;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .lcm-info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .lcm-info strong {
+            color: #1565c0;
+        }
+        
+        .full-width {
+            grid-column: 1 / -1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎨 Study Designer Dashboard</h1>
+            <p>Create and configure clinical research studies with AI-powered form generation</p>
+        </div>
+
+        <!-- Success Message -->
+        <div class="success-message" id="successMessage">
+            ✅ Study created successfully! <a href="#" onclick="viewStudies()">View all studies</a>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="grid">
+            <!-- Left Column: Study Creation -->
+            <div>
+                <!-- Study Details -->
+                <div class="card">
+                    <h2>📝 Study Details</h2>
+                    
+                    <div class="form-group">
+                        <label>Study Name *</label>
+                        <input type="text" id="studyName" placeholder="e.g., Pain Management Clinical Trial">
+                        <small>A clear, descriptive name for your study</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Description *</label>
+                        <textarea id="studyDescription" rows="3" placeholder="Describe the purpose and goals of this study..."></textarea>
+                        <small>Provide context for investigators and subjects</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Study Duration (days) *</label>
+                        <input type="number" id="studyDuration" value="90" min="1">
+                        <small>How long will subjects participate?</small>
+                    </div>
+                </div>
+
+                <!-- Forms Configuration -->
+                <div class="card" style="margin-top: 30px;">
+                    <h2>📋 Forms & Schedule</h2>
+                    
+                    <div class="forms-list" id="formsList">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📝</div>
+                            <p>No forms added yet. Click "Add Form" to get started!</p>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-secondary" onclick="addForm()">+ Add Form</button>
+                </div>
+
+                <!-- Study Settings -->
+                <div class="card" style="margin-top: 30px;">
+                    <h2>⚙️ Study Settings</h2>
+                    
+                    <div class="settings-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="settingDaisyChain" checked>
+                            <span>
+                                <strong>Enable Daisy-Chain Mode</strong><br>
+                                <small>Forms load automatically after completion</small>
+                            </span>
+                        </label>
+                    </div>
+                    
+                    <div class="settings-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="settingPartialSaves" checked>
+                            <span>
+                                <strong>Allow Partial Saves</strong><br>
+                                <small>Subjects can save progress and resume later</small>
+                            </span>
+                        </label>
+                    </div>
+                    
+                    <div class="settings-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="settingAutoSave">
+                            <span>
+                                <strong>Auto-Save Progress</strong><br>
+                                <small>Automatically save form data as subjects type</small>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="margin-top: 30px; display: flex; gap: 15px;">
+                    <button class="btn btn-primary" onclick="saveStudy()">💾 Create Study</button>
+                    <button class="btn btn-secondary" onclick="previewStudy()">👁️ Preview</button>
+                    <button class="btn btn-secondary" onclick="clearForm()">🔄 Reset</button>
+                </div>
+            </div>
+
+            <!-- Right Column: Calendar Preview -->
+            <div>
+                <div class="card">
+                    <h2>📅 Schedule Preview (LCM Algorithm)</h2>
+                    
+                    <div class="lcm-info">
+                        <strong>LCM Scheduling:</strong> The system calculates the Least Common Multiple to optimize form schedules and minimize subject burden.
+                    </div>
+                    
+                    <div class="calendar" id="calendar">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📅</div>
+                            <p>Add forms to see the schedule preview</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE = 'http://localhost:8000';
+        
+        // Global State
+        let forms = [];
+        let formIdCounter = 1;
+        
+        // Add a new form
+        function addForm() {
+            const formId = formIdCounter++;
+            const form = {
+                id: formId,
+                name: '',
+                frequency: 1,
+                fields: []
+            };
+            
+            forms.push(form);
+            renderForms();
+            updateCalendar();
+        }
+        
+        // Remove a form
+        function removeForm(formId) {
+            forms = forms.filter(f => f.id !== formId);
+            renderForms();
+            updateCalendar();
+        }
+        
+        // Update form data
+        function updateForm(formId, field, value) {
+            const form = forms.find(f => f.id === formId);
+            if (form) {
+                form[field] = value;
+                updateCalendar();
+            }
+        }
+        
+        // Render forms list
+        function renderForms() {
+            const container = document.getElementById('formsList');
+            
+            if (forms.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <p>No forms added yet. Click "Add Form" to get started!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = forms.map((form, index) => `
+                <div class="form-item">
+                    <div class="form-item-header">
+                        <h3>Form ${index + 1}</h3>
+                        <button class="btn btn-danger" onclick="removeForm(${form.id})" style="padding: 6px 12px; font-size: 13px;">
+                            🗑️ Remove
+                        </button>
+                    </div>
+                    <div class="form-item-content">
+                        <div class="form-group">
+                            <label>Form Name</label>
+                            <input type="text" 
+                                   value="${form.name}" 
+                                   onchange="updateForm(${form.id}, 'name', this.value)"
+                                   placeholder="e.g., Daily Pain Assessment">
+                        </div>
+                        <div class="form-group">
+                            <label>Frequency (every X days)</label>
+                            <input type="number" 
+                                   value="${form.frequency}" 
+                                   onchange="updateForm(${form.id}, 'frequency', parseInt(this.value))"
+                                   min="1" max="30">
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Calculate LCM
+        function gcd(a, b) {
+            return b === 0 ? a : gcd(b, a % b);
+        }
+        
+        function lcm(a, b) {
+            return (a * b) / gcd(a, b);
+        }
+        
+        function calculateLCM(frequencies) {
+            if (frequencies.length === 0) return 1;
+            return frequencies.reduce((acc, freq) => lcm(acc, freq));
+        }
+        
+        // Update calendar preview
+        function updateCalendar() {
+            const container = document.getElementById('calendar');
+            
+            if (forms.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📅</div>
+                        <p>Add forms to see the schedule preview</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Calculate schedule
+            const frequencies = forms.map(f => f.frequency || 1);
+            const lcmValue = calculateLCM(frequencies);
+            const daysToShow = Math.min(30, lcmValue); // Show up to 30 days
+            
+            const schedule = [];
+            for (let day = 1; day <= daysToShow; day++) {
+                const dayForms = forms.filter(f => day % f.frequency === 1);
+                if (dayForms.length > 0) {
+                    schedule.push({ day, forms: dayForms });
+                }
+            }
+            
+            // Render calendar
+            let html = `
+                <div class="lcm-info" style="margin-bottom: 15px;">
+                    <strong>Schedule Cycle:</strong> ${lcmValue} days<br>
+                    <strong>Forms Added:</strong> ${forms.length}<br>
+                    <strong>Showing:</strong> First ${daysToShow} days
+                </div>
+            `;
+            
+            if (schedule.length === 0) {
+                html += `
+                    <div class="empty-state">
+                        <p>No forms scheduled yet. Set form frequencies above.</p>
+                    </div>
+                `;
+            } else {
+                html += schedule.map(day => `
+                    <div class="calendar-day">
+                        <div class="calendar-day-header">
+                            <span class="calendar-day-number">Day ${day.day}</span>
+                            <span class="calendar-day-count">${day.forms.length} form${day.forms.length > 1 ? 's' : ''}</span>
+                        </div>
+                        <div class="calendar-forms">
+                            ${day.forms.map((form, idx) => `
+                                <span class="form-badge form-badge-${(idx % 5) + 1}">
+                                    ${form.name || `Form ${forms.indexOf(form) + 1}`}
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        // Save study
+        async function saveStudy() {
+            const name = document.getElementById('studyName').value.trim();
+            const description = document.getElementById('studyDescription').value.trim();
+            const duration = parseInt(document.getElementById('studyDuration').value);
+            
+            // Validation
+            if (!name) {
+                alert('Please enter a study name');
+                return;
+            }
+            
+            if (!description) {
+                alert('Please enter a study description');
+                return;
+            }
+            
+            if (forms.length === 0) {
+                alert('Please add at least one form');
+                return;
+            }
+            
+            // Validate all forms have names
+            const unnamedForms = forms.filter(f => !f.name.trim());
+            if (unnamedForms.length > 0) {
+                alert('Please name all forms');
+                return;
+            }
+            
+            // Prepare payload
+            const payload = {
+                name,
+                description,
+                duration_days: duration,
+                status: 'active',
+                forms: forms.map(f => ({
+                    form_name: f.name,
+                    frequency_days: f.frequency,
+                    active_phases: ['all'],
+                    fields: [] // Would be populated by form builder
+                }))
+            };
+            
+            console.log('Creating study:', payload);
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/studies`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(JSON.stringify(error));
+                }
+                
+                const result = await response.json();
+                console.log('Study created:', result);
+                
+                // Show success message
+                const successMsg = document.getElementById('successMessage');
+                successMsg.classList.add('show');
+                
+                setTimeout(() => {
+                    successMsg.classList.remove('show');
+                }, 5000);
+                
+                // Optionally clear form
+                // clearForm();
+                
+            } catch (error) {
+                console.error('Error creating study:', error);
+                alert('Failed to create study: ' + error.message);
+            }
+        }
+        
+        // Preview study
+        function previewStudy() {
+            const name = document.getElementById('studyName').value.trim();
+            const description = document.getElementById('studyDescription').value.trim();
+            const duration = parseInt(document.getElementById('studyDuration').value);
+            
+            const preview = {
+                name: name || '(Unnamed Study)',
+                description: description || '(No description)',
+                duration_days: duration,
+                forms: forms.map(f => ({
+                    name: f.name || '(Unnamed Form)',
+                    frequency: f.frequency
+                })),
+                settings: {
+                    daisy_chain: document.getElementById('settingDaisyChain').checked,
+                    partial_saves: document.getElementById('settingPartialSaves').checked,
+                    auto_save: document.getElementById('settingAutoSave').checked
+                }
+            };
+            
+            console.log('Study Preview:', preview);
+            alert('Study preview logged to console (F12)');
+        }
+        
+        // Clear form
+        function clearForm() {
+            if (!confirm('Are you sure you want to reset the form?')) {
+                return;
+            }
+            
+            document.getElementById('studyName').value = '';
+            document.getElementById('studyDescription').value = '';
+            document.getElementById('studyDuration').value = '90';
+            
+            forms = [];
+            formIdCounter = 1;
+            
+            renderForms();
+            updateCalendar();
+        }
+        
+        // View studies
+        function viewStudies() {
+            window.location.href = 'studies-list.html'; // Would create this page
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Designer Dashboard initialized');
+        });
+    </script>
+</body>
+</html>

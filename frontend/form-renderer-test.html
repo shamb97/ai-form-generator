@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Renderer with Skip Logic</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .form-container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .form-header {
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .form-title {
+            margin: 0;
+            color: #333;
+        }
+        
+        .form-description {
+            color: #666;
+            margin: 5px 0 0 0;
+        }
+        
+        .field-group {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .field-group.hidden {
+            display: none;
+        }
+        
+        .field-group.just-appeared {
+            animation: slideIn 0.3s ease;
+            background: #e8f5e9;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .field-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .required {
+            color: #f44336;
+        }
+        
+        .field-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .field-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        .field-input.error {
+            border-color: #f44336;
+        }
+        
+        .field-help {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .field-error {
+            color: #f44336;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .field-error.visible {
+            display: block;
+        }
+        
+        .radio-group, .checkbox-group {
+            margin-top: 10px;
+        }
+        
+        .radio-option, .checkbox-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .radio-option:hover, .checkbox-option:hover {
+            background: #f0f0f0;
+        }
+        
+        .radio-option input, .checkbox-option input {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        
+        .skip-logic-indicator {
+            display: inline-block;
+            background: #2196F3;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        
+        .submit-button {
+            width: 100%;
+            padding: 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .submit-button:hover {
+            background: #45a049;
+        }
+        
+        .submit-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .test-controls {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .test-controls h4 {
+            margin-top: 0;
+        }
+        
+        .test-button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #2196F3;
+            color: white;
+        }
+        
+        .debug-panel {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .debug-panel pre {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="test-controls">
+            <h4>🎮 Test Controls</h4>
+            <button class="test-button" onclick="loadSimpleForm()">Load Simple Form</button>
+            <button class="test-button" onclick="loadSkipLogicForm()">Load Skip Logic Form</button>
+            <button class="test-button" onclick="resetForm()">Reset Form</button>
+        </div>
+        
+        <div class="form-container" id="formContainer">
+            <div class="form-header">
+                <h2 class="form-title" id="formTitle">Click "Load Simple Form" to start</h2>
+                <p class="form-description" id="formDescription">Choose a test form above</p>
+            </div>
+            
+            <div id="formFields">
+                <!-- Fields will be rendered here -->
+            </div>
+            
+            <button class="submit-button" onclick="submitForm()" id="submitButton" disabled>
+                Save Form
+            </button>
+        </div>
+        
+        <div class="debug-panel">
+            <h4>🔍 Debug Panel</h4>
+            <div><strong>Visible Fields:</strong> <span id="visibleCount">0</span></div>
+            <div><strong>Hidden Fields:</strong> <span id="hiddenCount">0</span></div>
+            <div><strong>Skip Logic Active:</strong> <span id="skipLogicActive">No</span></div>
+            <pre id="debugOutput">No form loaded yet...</pre>
+        </div>
+    </div>
+
+    <script>
+        // Current form data
+        let currentForm = null;
+        let formValues = {};
+        let skipLogicRules = [];
+        
+        // Load a simple form (no skip logic)
+        function loadSimpleForm() {
+            currentForm = {
+                form_id: 'simple_demographics',
+                form_name: 'Demographics Form',
+                description: 'Basic demographic information',
+                fields: [
+                    {
+                        field_id: 'full_name',
+                        label: 'Full Name',
+                        type: 'text',
+                        required: true,
+                        placeholder: 'Enter your full name'
+                    },
+                    {
+                        field_id: 'age',
+                        label: 'Age',
+                        type: 'number',
+                        required: true,
+                        min: 18,
+                        max: 120,
+                        help: 'Must be 18 or older'
+                    },
+                    {
+                        field_id: 'email',
+                        label: 'Email Address',
+                        type: 'email',
+                        required: true,
+                        placeholder: 'your.email@example.com'
+                    },
+                    {
+                        field_id: 'phone',
+                        label: 'Phone Number',
+                        type: 'tel',
+                        required: false,
+                        placeholder: '(555) 123-4567'
+                    }
+                ]
+            };
+            
+            skipLogicRules = [];
+            renderForm();
+            updateDebug();
+        }
+        
+        // Load a form WITH skip logic
+        function loadSkipLogicForm() {
+            currentForm = {
+                form_id: 'medical_history',
+                form_name: 'Medical History',
+                description: 'Questions about your medical history with conditional fields',
+                fields: [
+                    {
+                        field_id: 'has_allergies',
+                        label: 'Do you have any allergies?',
+                        type: 'radio',
+                        required: true,
+                        options: [
+                            { value: 'yes', label: 'Yes' },
+                            { value: 'no', label: 'No' }
+                        ]
+                    },
+                    {
+                        field_id: 'allergy_details',
+                        label: 'Please describe your allergies',
+                        type: 'textarea',
+                        required: true,
+                        placeholder: 'List all allergies...',
+                        help: 'Include medications, foods, environmental allergies',
+                        skip_logic: {
+                            show_when: 'has_allergies',
+                            equals: 'yes'
+                        }
+                    },
+                    {
+                        field_id: 'takes_medication',
+                        label: 'Do you currently take any medications?',
+                        type: 'radio',
+                        required: true,
+                        options: [
+                            { value: 'yes', label: 'Yes' },
+                            { value: 'no', label: 'No' }
+                        ]
+                    },
+                    {
+                        field_id: 'medication_list',
+                        label: 'List your current medications',
+                        type: 'textarea',
+                        required: true,
+                        placeholder: 'Medication name, dosage, frequency...',
+                        skip_logic: {
+                            show_when: 'takes_medication',
+                            equals: 'yes'
+                        }
+                    },
+                    {
+                        field_id: 'has_chronic_condition',
+                        label: 'Do you have any chronic health conditions?',
+                        type: 'radio',
+                        required: true,
+                        options: [
+                            { value: 'yes', label: 'Yes' },
+                            { value: 'no', label: 'No' }
+                        ]
+                    },
+                    {
+                        field_id: 'condition_details',
+                        label: 'Please describe your chronic conditions',
+                        type: 'textarea',
+                        required: true,
+                        placeholder: 'Condition name, when diagnosed, treatment...',
+                        skip_logic: {
+                            show_when: 'has_chronic_condition',
+                            equals: 'yes'
+                        }
+                    }
+                ]
+            };
+            
+            // Extract skip logic rules
+            skipLogicRules = currentForm.fields
+                .filter(f => f.skip_logic)
+                .map(f => ({
+                    field_id: f.field_id,
+                    show_when: f.skip_logic.show_when,
+                    equals: f.skip_logic.equals
+                }));
+            
+            renderForm();
+            updateDebug();
+        }
+        
+        // Render the form
+        function renderForm() {
+            if (!currentForm) return;
+            
+            // Update header
+            document.getElementById('formTitle').textContent = currentForm.form_name;
+            document.getElementById('formDescription').textContent = currentForm.description;
+            
+            // Clear form values
+            formValues = {};
+            
+            // Render fields
+            const fieldsContainer = document.getElementById('formFields');
+            fieldsContainer.innerHTML = currentForm.fields.map(field => {
+                const isConditional = field.skip_logic ? true : false;
+                const shouldHide = isConditional; // Hide conditional fields initially
+                
+                return `
+                    <div class="field-group ${shouldHide ? 'hidden' : ''}" id="field_${field.field_id}">
+                        <label class="field-label">
+                            ${field.label}
+                            ${field.required ? '<span class="required">*</span>' : ''}
+                            ${isConditional ? '<span class="skip-logic-indicator">Conditional</span>' : ''}
+                        </label>
+                        ${renderField(field)}
+                        ${field.help ? `<div class="field-help">${field.help}</div>` : ''}
+                        <div class="field-error" id="error_${field.field_id}"></div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Enable submit button
+            document.getElementById('submitButton').disabled = false;
+            
+            // Add event listeners
+            attachEventListeners();
+        }
+        
+        // Render individual field based on type
+        function renderField(field) {
+            switch(field.type) {
+                case 'text':
+                case 'email':
+                case 'tel':
+                case 'number':
+                    return `<input 
+                        type="${field.type}" 
+                        id="${field.field_id}" 
+                        class="field-input"
+                        placeholder="${field.placeholder || ''}"
+                        ${field.required ? 'required' : ''}
+                        ${field.min ? `min="${field.min}"` : ''}
+                        ${field.max ? `max="${field.max}"` : ''}
+                    />`;
+                
+                case 'textarea':
+                    return `<textarea 
+                        id="${field.field_id}" 
+                        class="field-input"
+                        rows="4"
+                        placeholder="${field.placeholder || ''}"
+                        ${field.required ? 'required' : ''}
+                    ></textarea>`;
+                
+                case 'radio':
+                    return `<div class="radio-group">
+                        ${field.options.map(opt => `
+                            <label class="radio-option">
+                                <input 
+                                    type="radio" 
+                                    name="${field.field_id}" 
+                                    value="${opt.value}"
+                                    ${field.required ? 'required' : ''}
+                                />
+                                <span>${opt.label}</span>
+                            </label>
+                        `).join('')}
+                    </div>`;
+                
+                case 'checkbox':
+                    return `<div class="checkbox-group">
+                        ${field.options.map(opt => `
+                            <label class="checkbox-option">
+                                <input 
+                                    type="checkbox" 
+                                    name="${field.field_id}" 
+                                    value="${opt.value}"
+                                />
+                                <span>${opt.label}</span>
+                            </label>
+                        `).join('')}
+                    </div>`;
+                
+                default:
+                    return `<input type="text" id="${field.field_id}" class="field-input" />`;
+            }
+        }
+        
+        // Attach event listeners for skip logic
+        function attachEventListeners() {
+            currentForm.fields.forEach(field => {
+                const element = document.getElementById(field.field_id);
+                if (!element) {
+                    // For radio buttons, attach to all inputs with that name
+                    const radios = document.getElementsByName(field.field_id);
+                    radios.forEach(radio => {
+                        radio.addEventListener('change', () => handleFieldChange(field.field_id));
+                    });
+                } else {
+                    element.addEventListener('input', () => handleFieldChange(field.field_id));
+                    element.addEventListener('change', () => handleFieldChange(field.field_id));
+                }
+            });
+        }
+        
+        // Handle field value changes
+        function handleFieldChange(fieldId) {
+            // Get the value
+            const field = currentForm.fields.find(f => f.field_id === fieldId);
+            let value;
+            
+            if (field.type === 'radio') {
+                const checked = document.querySelector(`input[name="${fieldId}"]:checked`);
+                value = checked ? checked.value : null;
+            } else if (field.type === 'checkbox') {
+                const checked = Array.from(document.querySelectorAll(`input[name="${fieldId}"]:checked`));
+                value = checked.map(c => c.value);
+            } else {
+                const element = document.getElementById(fieldId);
+                value = element ? element.value : null;
+            }
+            
+            // Store value
+            formValues[fieldId] = value;
+            
+            // Evaluate skip logic
+            evaluateSkipLogic();
+            
+            // Update debug
+            updateDebug();
+        }
+        
+        // Evaluate skip logic rules
+        function evaluateSkipLogic() {
+            skipLogicRules.forEach(rule => {
+                const triggerValue = formValues[rule.show_when];
+                const shouldShow = triggerValue === rule.equals;
+                
+                const fieldElement = document.getElementById(`field_${rule.field_id}`);
+                if (fieldElement) {
+                    if (shouldShow && fieldElement.classList.contains('hidden')) {
+                        // Show the field with animation
+                        fieldElement.classList.remove('hidden');
+                        fieldElement.classList.add('just-appeared');
+                        setTimeout(() => {
+                            fieldElement.classList.remove('just-appeared');
+                        }, 300);
+                    } else if (!shouldShow && !fieldElement.classList.contains('hidden')) {
+                        // Hide the field
+                        fieldElement.classList.add('hidden');
+                        
+                        // Clear its value
+                        const inputElement = document.getElementById(rule.field_id);
+                        if (inputElement) {
+                            inputElement.value = '';
+                            delete formValues[rule.field_id];
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update debug panel
+        function updateDebug() {
+            const allFields = currentForm ? currentForm.fields.length : 0;
+            const hiddenFields = document.querySelectorAll('.field-group.hidden').length;
+            const visibleFields = allFields - hiddenFields;
+            
+            document.getElementById('visibleCount').textContent = visibleFields;
+            document.getElementById('hiddenCount').textContent = hiddenFields;
+            document.getElementById('skipLogicActive').textContent = skipLogicRules.length > 0 ? 'Yes' : 'No';
+            
+            document.getElementById('debugOutput').textContent = JSON.stringify({
+                form: currentForm ? currentForm.form_name : 'None',
+                values: formValues,
+                skip_rules: skipLogicRules.length,
+                visible_fields: visibleFields
+            }, null, 2);
+        }
+        
+        // Submit form with proper validation
+        function submitForm() {
+            // Clear previous errors
+            document.querySelectorAll('.field-error').forEach(el => {
+                el.classList.remove('visible');
+            });
+            document.querySelectorAll('.field-input').forEach(el => {
+                el.classList.remove('error');
+            });
+            
+            let hasErrors = false;
+            const errors = [];
+            
+            // Validate only VISIBLE required fields
+            currentForm.fields.forEach(field => {
+                const fieldContainer = document.getElementById(`field_${field.field_id}`);
+                const isVisible = fieldContainer && !fieldContainer.classList.contains('hidden');
+                
+                // Only validate if field is visible and required
+                if (isVisible && field.required) {
+                    const value = formValues[field.field_id];
+                    const isEmpty = !value || (Array.isArray(value) && value.length === 0) || value.trim() === '';
+                    
+                    if (isEmpty) {
+                        hasErrors = true;
+                        errors.push({
+                            field_id: field.field_id,
+                            label: field.label,
+                            message: `${field.label} is required`
+                        });
+                        
+                        // Show error visually
+                        const errorEl = document.getElementById(`error_${field.field_id}`);
+                        if (errorEl) {
+                            errorEl.textContent = 'This field is required';
+                            errorEl.classList.add('visible');
+                        }
+                        
+                        // Highlight the input
+                        const inputEl = document.getElementById(field.field_id);
+                        if (inputEl) {
+                            inputEl.classList.add('error');
+                        }
+                    }
+                }
+            });
+            
+            // If there are errors, show them and prevent submission
+            if (hasErrors) {
+                alert(`❌ Please fill in all required fields!\n\nMissing:\n${errors.map(e => `- ${e.label}`).join('\n')}`);
+                
+                // Scroll to first error
+                const firstError = document.querySelector('.field-error.visible');
+                if (firstError) {
+                    firstError.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                
+                return;
+            }
+            
+            // Success! Show what would be submitted
+            const submissionData = {
+                form_id: currentForm.form_id,
+                form_name: currentForm.form_name,
+                submitted_at: new Date().toISOString(),
+                values: formValues,
+                metadata: {
+                    total_fields: currentForm.fields.length,
+                    visible_fields: currentForm.fields.filter(f => {
+                        const container = document.getElementById(`field_${f.field_id}`);
+                        return container && !container.classList.contains('hidden');
+                    }).length,
+                    hidden_fields: currentForm.fields.filter(f => {
+                        const container = document.getElementById(`field_${f.field_id}`);
+                        return container && container.classList.contains('hidden');
+                    }).map(f => ({
+                        field_id: f.field_id,
+                        label: f.label,
+                        was_shown: false,
+                        skip_logic_reason: f.skip_logic ? 
+                            `Hidden because ${f.skip_logic.show_when} != "${f.skip_logic.equals}"` : 
+                            'No skip logic'
+                    }))
+                }
+            };
+            
+            alert('✅ Form submitted successfully!\n\nCheck console for full data.');
+            console.log('📋 SUBMISSION DATA:', submissionData);
+            
+            // Update debug panel
+            document.getElementById('debugOutput').textContent = 
+                '✅ FORM SUBMITTED!\n\n' + 
+                JSON.stringify(submissionData, null, 2);
+        }
+        
+        // Reset form
+        function resetForm() {
+            currentForm = null;
+            formValues = {};
+            skipLogicRules = [];
+            
+            document.getElementById('formTitle').textContent = 'Click "Load Simple Form" to start';
+            document.getElementById('formDescription').textContent = 'Choose a test form above';
+            document.getElementById('formFields').innerHTML = '';
+            document.getElementById('submitButton').disabled = true;
+            
+            updateDebug();
+        }
+        
+        // Initialize
+        updateDebug();
+    </script>
+</body>
+</html>

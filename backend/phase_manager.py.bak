@@ -19,7 +19,7 @@ from dataclasses import dataclass
 
 # Database imports (for phase transition features)
 try:
-    from database import (
+    from .database import (
         get_allowed_transitions as db_get_allowed_transitions,
         get_transition_rule as db_get_transition_rule,
         create_phase_transition as db_create_phase_transition,

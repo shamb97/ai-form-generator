@@ -57,55 +57,7 @@ OUTPUT RULES:
     "phase_names": ["Screening", "Treatment", "Follow-up"],
     "recommended_tier": 3
   },
-  IMPORTANT: If the description mentions MULTIPLE distinct tracking needs, frequencies, or purposes, create MULTIPLE forms!
-
-Examples requiring multiple forms:
-- "Daily X and weekly Y" → 2 forms (different frequencies)
-- "Track A and track B" → 2 forms (different purposes)
-- "Ask about X, Y, and Z" where frequencies differ → Multiple forms
-
-When creating multiple forms, use this structure:
-{
-  "study_classification": {...},
-  "forms": [
-    {
-      IMPORTANT: If the description mentions MULTIPLE distinct tracking needs, frequencies, or purposes, create MULTIPLE forms!
-
-Examples requiring multiple forms:
-- "Daily X and weekly Y" → 2 forms (different frequencies)
-- "Track A and track B" → 2 forms (different purposes)
-
-When creating multiple forms, use this structure:
-{
-  "study_classification": {...},
-  "forms": [
-    {"form_schema": {...}, "frequency_days": 1},
-    {"form_schema": {...}, "frequency_days": 7}
-  ],
-  "metadata_suggestions": {...}
-}
-
-For a SINGLE form, use original structure.
-
-"form_schema": {...},
-      "frequency_days": 1
-    },
-    {
-      "form_schema": {...},
-      "frequency_days": 7
-    }
-  ],
-  "metadata_suggestions": {...}
-}
-
-For a SINGLE form, use the original structure:
-{
-  "study_classification": {...},
-  "form_schema": {...},
-  "metadata_suggestions": {...}
-}
-
-"form_schema": {
+  "form_schema": {
     "form_id": "lowercase_with_underscores",
     "form_name": "Human Readable Name",
     "description": "Brief description",
@@ -291,14 +243,6 @@ IMPORTANT: Output ONLY the JSON, nothing else! No markdown code blocks, no ```js
             # Check if clarification is needed
             if enhanced_classification.get("needs_clarification"):
                 print("❓ Clarification needed from user")
-            
-            # Handle both single form and multiple forms
-            if "forms" in form_data:
-                print(f"   Created {len(form_data['forms'])} forms")
-            
-            # Handle both single form and multiple forms
-            if "forms" in form_data:
-                print(f"   Created {len(form_data['forms'])} forms")
             
             return form_data
             

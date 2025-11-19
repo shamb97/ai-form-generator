@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progress Tracking Test</title>
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        
+        .progress-card {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .progress-section {
+            margin: 20px 0;
+        }
+        
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .progress-fill.phase-screening {
+            background: linear-gradient(90deg, #2196F3, #1976D2);
+        }
+        
+        .progress-fill.phase-baseline {
+            background: linear-gradient(90deg, #FF9800, #F57C00);
+        }
+        
+        .progress-fill.phase-intervention {
+            background: linear-gradient(90deg, #4CAF50, #388E3C);
+        }
+        
+        .progress-fill.phase-followup {
+            background: linear-gradient(90deg, #9C27B0, #7B1FA2);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>📊 Progress Tracking Test</h2>
+        
+        <div class="progress-card">
+            <h3>Overall Progress</h3>
+            
+            <div class="progress-section">
+                <div class="progress-label">
+                    <span>Total Completion</span>
+                    <span id="overallPercent">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="overallProgress" style="width: 0%">
+                        0%
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="completedForms">0</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="remainingForms">0</div>
+                    <div class="stat-label">Remaining</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalForms">0</div>
+                    <div class="stat-label">Total Forms</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="progress-card">
+            <h3>Progress by Phase</h3>
+            <div id="phaseProgress">
+                <!-- Phase progress bars will be inserted here -->
+            </div>
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <button onclick="loadTestProgress()" style="padding: 10px 20px; margin: 5px;">Load Test Progress</button>
+            <button onclick="simulateProgress()" style="padding: 10px 20px; margin: 5px;">Simulate Progress +10%</button>
+            <button onclick="resetProgress()" style="padding: 10px 20px; margin: 5px;">Reset</button>
+        </div>
+        
+        <div id="debugOutput" style="margin-top: 20px; padding: 10px; background: #f5f5f5; border-radius: 8px;">
+            <h3>Debug Output:</h3>
+            <pre id="debugText">Ready to load progress data...</pre>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let currentProgress = 0;
+        
+        // Load test progress
+        function loadTestProgress() {
+            const debugEl = document.getElementById('debugText');
+            debugEl.textContent = 'Loading test progress data...';
+            
+            // Simulate progress data
+            const testData = {
+                overall: {
+                    completed: 12,
+                    total: 20,
+                    percentage: 60
+                },
+                phases: [
+                    {
+                        phase_id: 'screening',
+                        phase_name: 'Screening',
+                        completed: 3,
+                        total: 3,
+                        percentage: 100
+                    },
+                    {
+                        phase_id: 'baseline',
+                        phase_name: 'Baseline',
+                        completed: 4,
+                        total: 5,
+                        percentage: 80
+                    },
+                    {
+                        phase_id: 'intervention',
+                        phase_name: 'Intervention',
+                        completed: 5,
+                        total: 8,
+                        percentage: 63
+                    },
+                    {
+                        phase_id: 'followup',
+                        phase_name: 'Follow-up',
+                        completed: 0,
+                        total: 4,
+                        percentage: 0
+                    }
+                ]
+            };
+            
+            currentProgress = testData.overall.percentage;
+            renderProgress(testData);
+            debugEl.textContent = `✅ Progress data loaded!\n${JSON.stringify(testData, null, 2)}`;
+        }
+        
+        // Render progress data
+        function renderProgress(data) {
+            // Overall progress
+            const overallPercent = data.overall.percentage;
+            document.getElementById('overallPercent').textContent = `${overallPercent}%`;
+            document.getElementById('overallProgress').style.width = `${overallPercent}%`;
+            document.getElementById('overallProgress').textContent = `${overallPercent}%`;
+            
+            // Stats
+            document.getElementById('completedForms').textContent = data.overall.completed;
+            document.getElementById('remainingForms').textContent = data.overall.total - data.overall.completed;
+            document.getElementById('totalForms').textContent = data.overall.total;
+            
+            // Phase progress
+            const phaseContainer = document.getElementById('phaseProgress');
+            phaseContainer.innerHTML = data.phases.map(phase => `
+                <div class="progress-section">
+                    <div class="progress-label">
+                        <span>${phase.phase_name}</span>
+                        <span>${phase.completed}/${phase.total} (${phase.percentage}%)</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill phase-${phase.phase_id}" style="width: ${phase.percentage}%">
+                            ${phase.percentage}%
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Simulate progress increase
+        function simulateProgress() {
+            currentProgress = Math.min(currentProgress + 10, 100);
+            
+            const testData = {
+                overall: {
+                    completed: Math.floor(20 * currentProgress / 100),
+                    total: 20,
+                    percentage: currentProgress
+                },
+                phases: [
+                    {
+                        phase_id: 'screening',
+                        phase_name: 'Screening',
+                        completed: 3,
+                        total: 3,
+                        percentage: 100
+                    },
+                    {
+                        phase_id: 'baseline',
+                        phase_name: 'Baseline',
+                        completed: Math.min(5, Math.floor(5 * currentProgress / 100)),
+                        total: 5,
+                        percentage: Math.min(100, currentProgress)
+                    },
+                    {
+                        phase_id: 'intervention',
+                        phase_name: 'Intervention',
+                        completed: Math.max(0, Math.floor(8 * (currentProgress - 50) / 100)),
+                        total: 8,
+                        percentage: Math.max(0, Math.min(100, (currentProgress - 50) * 2))
+                    },
+                    {
+                        phase_id: 'followup',
+                        phase_name: 'Follow-up',
+                        completed: Math.max(0, Math.floor(4 * (currentProgress - 80) / 100)),
+                        total: 4,
+                        percentage: Math.max(0, Math.min(100, (currentProgress - 80) * 5))
+                    }
+                ]
+            };
+            
+            renderProgress(testData);
+            document.getElementById('debugText').textContent = `Progress increased to ${currentProgress}%`;
+        }
+        
+        // Reset progress
+        function resetProgress() {
+            currentProgress = 0;
+            const testData = {
+                overall: {
+                    completed: 0,
+                    total: 20,
+                    percentage: 0
+                },
+                phases: [
+                    {
+                        phase_id: 'screening',
+                        phase_name: 'Screening',
+                        completed: 0,
+                        total: 3,
+                        percentage: 0
+                    },
+                    {
+                        phase_id: 'baseline',
+                        phase_name: 'Baseline',
+                        completed: 0,
+                        total: 5,
+                        percentage: 0
+                    },
+                    {
+                        phase_id: 'intervention',
+                        phase_name: 'Intervention',
+                        completed: 0,
+                        total: 8,
+                        percentage: 0
+                    },
+                    {
+                        phase_id: 'followup',
+                        phase_name: 'Follow-up',
+                        completed: 0,
+                        total: 4,
+                        percentage: 0
+                    }
+                ]
+            };
+            
+            renderProgress(testData);
+            document.getElementById('debugText').textContent = 'Progress reset to 0%';
+        }
+    </script>
+</body>
+</html>

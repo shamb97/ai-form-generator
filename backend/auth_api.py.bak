@@ -9,7 +9,7 @@ from pydantic import BaseModel, EmailStr
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import jwt, JWTError
-from auth_database import (
+from .auth_database import (
     User, StudyDesigner, Investigator, Subject, InvestigatorSiteAssignment,
     get_db, verify_password, get_password_hash, generate_access_code
 )
@@ -335,7 +335,7 @@ def validate_access_code(access_code: str, db: Session = Depends(get_db)):
     """
     Validate an access code for study enrollment
     """
-    from auth_database import AccessCode
+    from .auth_database import AccessCode
     
     code = db.query(AccessCode).filter(
         AccessCode.code == access_code,

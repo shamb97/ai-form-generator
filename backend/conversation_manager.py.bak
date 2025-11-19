@@ -9,7 +9,7 @@ import os
 import json
 from typing import Dict, List, Any, Optional
 from datetime import datetime
-from langgraph_orchestrator import LangGraphOrchestrator
+from .langgraph_orchestrator import LangGraphOrchestrator
 
 
 SYSTEM_PROMPT = """You are an expert clinical research assistant helping researchers design studies.

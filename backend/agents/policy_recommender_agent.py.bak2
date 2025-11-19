@@ -1,0 +1,240 @@
+"""
+Policy Recommender Agent
+========================
+
+This agent suggests validation rules and skip logic for forms!
+
+It analyzes form fields and recommends:
+- Field validation rules
+- Skip logic conditions
+- Data quality policies
+- Participant safety checks
+"""
+
+from typing import Dict, Any, List
+import json
+import sys
+import os
+
+# Handle imports whether running as module or script
+if __name__ == "__main__":
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from agents.base_agent import BaseAgent
+else:
+    from base_agent import BaseAgent
+
+
+class PolicyRecommenderAgent(BaseAgent):
+    """
+    Specialized agent for recommending validation and skip logic policies
+    """
+    
+    def __init__(self):
+        system_prompt = """You are an expert in clinical research data quality and validation.
+
+Your job is to analyze forms and recommend:
+1. Field validation rules (min/max, patterns, required fields)
+2. Skip logic conditions (when to show/hide fields)
+3. Data quality policies
+4. Safety alert thresholds
+
+RULES:
+- Prioritize participant safety
+- Ensure data quality and completeness
+- Follow clinical research best practices
+- ALWAYS output valid JSON only - NO markdown code blocks
+
+OUTPUT FORMAT (raw JSON only):
+{
+  "validation_rules": {
+    "field_id": {
+      "type": "range|pattern|required|custom",
+      "rule": "the actual validation rule",
+      "error_message": "user-friendly error message"
+    }
+  },
+  "skip_logic": [
+    {
+      "condition": "field_id operator value",
+      "action": "show|hide|require",
+      "target_fields": ["list of affected fields"]
+    }
+  ],
+  "safety_alerts": [
+    {
+      "trigger": "condition that triggers alert",
+      "severity": "low|medium|high|critical",
+      "action": "what to do"
+    }
+  ],
+  "recommendations": ["list of policy suggestions"]
+}
+
+CRITICAL: Output ONLY raw JSON, no markdown formatting!"""
+        
+        super().__init__(
+            name="Policy Recommender Agent",
+            role="Suggests validation rules and skip logic",
+            system_prompt=system_prompt
+        )
+    
+    def _clean_json_response(self, response: str) -> str:
+        """Clean up JSON response - remove markdown code blocks"""
+        response_clean = response.strip()
+        if response_clean.startswith("```"):
+            lines = response_clean.split("\n")
+            lines = lines[1:]
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]
+            response_clean = "\n".join(lines)
+        return response_clean.strip()
+    
+    def recommend_policies(self, form_schema: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Recommend validation rules and skip logic for a form
+        
+        Args:
+            form_schema: The form schema to analyze
+            
+        Returns:
+            Recommended policies
+        """
+        form_name = form_schema.get('form_name', 'Unknown Form')
+        fields_count = len(form_schema.get('fields', []))
+        
+        print(f"\n✅ Analyzing '{form_name}' ({fields_count} fields) for policy recommendations...")
+        
+        prompt = f"""Analyze this form and recommend validation rules and skip logic:
+
+{json.dumps(form_schema, indent=2)}
+
+Provide comprehensive policy recommendations focusing on:
+1. Data quality validation
+2. Participant safety
+3. Logical skip conditions
+4. Error prevention
+
+Remember: Output ONLY raw JSON, no markdown!"""
+        
+        response = self.think(prompt)
+        
+        try:
+            response_clean = self._clean_json_response(response)
+            policies = json.loads(response_clean)
+            
+            print(f"✅ Policies recommended!")
+            print(f"   Validation rules: {len(policies.get('validation_rules', {}))}")
+            print(f"   Skip logic rules: {len(policies.get('skip_logic', []))}")
+            print(f"   Safety alerts: {len(policies.get('safety_alerts', []))}")
+            return policies
+        except json.JSONDecodeError as e:
+            print(f"❌ Error parsing policies JSON: {e}")
+            print(f"Raw response (first 300 chars): {response[:300]}")
+            return {
+                "error": "Failed to parse policies",
+                "raw_response": response[:200]
+            }
+    
+    def suggest_skip_logic(
+        self, 
+        trigger_field: str, 
+        dependent_fields: List[str],
+        clinical_context: str
+    ) -> Dict[str, Any]:
+        """
+        Suggest skip logic for specific field relationships
+        
+        Args:
+            trigger_field: The field that triggers the logic
+            dependent_fields: Fields affected by the trigger
+            clinical_context: Clinical reasoning
+            
+        Returns:
+            Skip logic recommendation
+        """
+        print(f"\n💡 Suggesting skip logic for '{trigger_field}'...")
+        
+        prompt = f"""Suggest skip logic rules:
+
+Trigger Field: {trigger_field}
+Dependent Fields: {', '.join(dependent_fields)}
+Clinical Context: {clinical_context}
+
+Provide skip logic recommendation as raw JSON:
+{{
+  "skip_logic_rules": [
+    {{
+      "condition": "trigger condition",
+      "action": "show|hide|require",
+      "target_fields": ["affected fields"],
+      "rationale": "why this logic makes sense"
+    }}
+  ]
+}}
+
+Remember: Output ONLY raw JSON, no markdown!"""
+        
+        response = self.think(prompt)
+        
+        try:
+            response_clean = self._clean_json_response(response)
+            suggestion = json.loads(response_clean)
+            print(f"✅ Skip logic suggested!")
+            return suggestion
+        except json.JSONDecodeError as e:
+            print(f"❌ Error parsing skip logic JSON: {e}")
+            return {"error": "Failed to parse skip logic"}
+
+
+# Test the agent if run directly
+if __name__ == "__main__":
+    print("\n" + "="*60)
+    print("🧪 TESTING POLICY RECOMMENDER AGENT")
+    print("="*60)
+    
+    # Create the agent
+    recommender = PolicyRecommenderAgent()
+    
+    # Test 1: Recommend policies for a form
+    print("\n--- Test 1: Policy Recommendations ---")
+    test_form = {
+        "form_id": "adverse_event_form",
+        "form_name": "Adverse Event Report",
+        "fields": [
+            {
+                "field_id": "severity",
+                "field_name": "Severity",
+                "field_type": "radio",
+                "options": ["Mild", "Moderate", "Severe", "Life-threatening"]
+            },
+            {
+                "field_id": "hospitalization_required",
+                "field_name": "Hospitalization Required?",
+                "field_type": "radio",
+                "options": ["Yes", "No"]
+            },
+            {
+                "field_id": "hospital_details",
+                "field_name": "Hospital Details",
+                "field_type": "textarea"
+            }
+        ]
+    }
+    
+    policies = recommender.recommend_policies(test_form)
+    print("\nResult:")
+    print(json.dumps(policies, indent=2))
+    
+    # Test 2: Suggest specific skip logic
+    print("\n--- Test 2: Skip Logic Suggestion ---")
+    skip_logic = recommender.suggest_skip_logic(
+        trigger_field="hospitalization_required",
+        dependent_fields=["hospital_details"],
+        clinical_context="Only show hospital details if hospitalization is required"
+    )
+    print("\nResult:")
+    print(json.dumps(skip_logic, indent=2))
+    
+    print("\n" + "="*60)
+    print("✅ POLICY RECOMMENDER AGENT TEST COMPLETE!")
+    print("="*60 + "\n")
