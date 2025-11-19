@@ -1158,9 +1158,19 @@ async def create_study_from_conversation(
         print(f"✅ Forms generated: {len(result.get('forms', []))}")
         
         # SAVE TO DATABASE! ← NEW SECTION
-        if result.get('success') and result.get('forms'):
+        # Extract forms from orchestrator result (handle nested structure)
+        forms_list = []
+        if result.get('forms'):
+            for item in result.get('forms', []):
+                # Check if this item has nested 'forms' array
+                if isinstance(item, dict) and 'forms' in item:
+                    forms_list.extend(item['forms'])
+                else:
+                    forms_list.append(item)
+        
+        if forms_list and len(forms_list) > 0:
             # Extract study name from first form or use default
-            forms_list = result.get('forms', [])
+            # forms_list already extracted above
             
             # Try to get study name from forms or use intelligent default
             study_name = "AI-Generated Study"
